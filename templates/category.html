@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block main %}
+<h1 class="title" style="text-align: center;">Categories</h1>
+
+{% if categories.is_empty() %}
+<h1 class="title" style="text-align: center;">No categories yet</h1>
+{% else %}
+<ul>
+{% for category in categories %}
+<li>{{ category.name }} -> {{ category.path }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<form method="POST" action="/category" accept-charset="utf-8">
+	<div class="box is-flex is-justify-content-center is-align-items-center is-flex-direction-column" style="margin: 1rem auto; text-align: center; max-width: 512px; gap: 20px; border: solid 1px black;">
+		<h2>Create new</h2>
+		<div>
+		  <h3>Name:</h3>
+			<input type="text" name="name" id="name"{# TODO {% if post.name %} value="{{ post.name }}"{% endif %}#}>
+		</div>
+		<div>
+			<h3>Path:</h3>
+			<input type="text" name="path" id="path"{# TODO {% if post.name %} value="{{ post.name }}"{% endif %}#}>
+		</div>
+		<div class="control" style="text-align: center;">
+		    <input type="Submit" class="button is-success" value="Next">
+		</div>
+	</div>
+</form>
+{% endblock %}

@@ -5,7 +5,8 @@ use axum::response::{IntoResponse, Response};
 use snafu::ErrorCompat;
 use snafu::prelude::*;
 
-use super::free_space::FreeSpaceError;
+use crate::database::category::CategoryError;
+use crate::state::free_space::FreeSpaceError;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
@@ -22,6 +23,8 @@ pub enum AppStateError {
     Other {
         source: Box<dyn snafu::Error + Send + Sync + 'static>,
     },
+    #[snafu(display("Category error"))]
+    Category { source: CategoryError },
 }
 
 impl AppStateError {

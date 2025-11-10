@@ -1,5 +1,5 @@
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::serve::Listener;
 use static_serve::embed_assets;
 
@@ -20,6 +20,8 @@ pub fn router(state: state::AppState) -> Router {
         // Register dynamic routes
         .route("/", get(routes::index::index))
         .route("/progress/{view_request}", get(routes::progress::progress))
+        .route("/category", get(routes::category::index))
+        .route("/category", post(routes::category::create))
         // Register static assets routes
         .nest("/assets", static_router())
         // Insert request timing

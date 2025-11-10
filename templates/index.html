@@ -18,9 +18,9 @@
             <div id="collection" class="form-text mb-1">Choose the type of content you want to download.</div>
             <select class="form-select" aria-label="Choose the type of content you want to download" name="collection">{#{% set post_tag = post.tag %} TODO #}
               <option disabled {#{% if post_tag is not defined %}selected{% endif %}#}>Genre</option>
-              {% for tag in state.categories %}
-                <option {#{% if post_tag == tag %}selected {% endif %}#}value="{{ tag }}">{{ tag }}</option>
-                {% endfor %}
+              {% for tag in categories %}
+              <option {#{% if post_tag == tag %}selected {% endif %}#}value="{{ tag }}">{{ tag }}</option>
+              {% endfor %}
             </select>
           </div>
         </div>
