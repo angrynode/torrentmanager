@@ -5,8 +5,6 @@ use tokio::fs::{create_dir_all, read, try_exists, write};
 use tokio_listener::ListenerAddress;
 use xdg::BaseDirectories;
 
-use std::sync::{Arc, RwLock};
-
 #[derive(Debug, Snafu)]
 pub enum ConfigError {
     #[snafu(display(
@@ -70,11 +68,6 @@ pub struct AppConfig {
 
     /// Main directory where content files are stored
     pub media_dir: Utf8PathBuf,
-
-    /// Main categories to store content
-    // pub media_categories: Arc<RwLock<Vec<CategoryConfig>>>
-    #[serde(default)]
-    pub media_categories: Arc<RwLock<Vec<CategoryConfig>>>,
 
     /// IP:PORT or Unix socket path to start the server (default: `127.0.0.1:8000`).
     ///
@@ -160,36 +153,5 @@ impl AppConfig {
         // TODO: errors
         let content = toml::to_string_pretty(&self).unwrap();
         write(&self.config_path, &content).await.unwrap();
-    }
-}
-
-/// Configuration for a content category, such as "Video" or "ISO".
-///
-/// Each category has a unique identifier (usize), a human-readable name,
-/// and an on-disk path.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct CategoryConfig {
-    /// Unique identifier. May not be changed.
-    id: usize,
-    /// Human-readable name for the category.
-    name: String,
-    /// Path where to store the content symlinks.
-    ///
-    /// This path is relative from the global `media_dir`, to allow moving
-    /// the entire collection.
-    path: Utf8PathBuf,
-}
-
-impl CategoryConfig {
-    pub fn id(&self) -> usize {
-        self.id
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn path(&self) -> &Utf8Path {
-        &self.path
     }
 }

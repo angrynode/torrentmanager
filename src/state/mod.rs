@@ -1,5 +1,6 @@
 use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
+use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use snafu::prelude::*;
 
@@ -66,13 +67,15 @@ impl AppState {
         .context(InitAPISnafu)?;
 
         let sqlite_path = config.sqlite_path.clone();
+        // TODO: dehardcode
+        let database = Database::connect(format!("sqlite://{}?mode=rwc", &sqlite_path))
+            .await
+            .context(SqliteSnafu)?;
+        Migrator::up(&database, None).await.unwrap();
 
         Ok(Self {
             config,
-            // TODO: dehardcode
-            database: Database::connect(format!("sqlite://{}?mode=rwc", &sqlite_path))
-                .await
-                .context(SqliteSnafu)?,
+            database,
             torrent_client,
         })
     }
