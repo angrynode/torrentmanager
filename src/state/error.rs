@@ -16,6 +16,8 @@ pub enum AppStateError {
     API { source: hightorrent_api::ApiError },
     #[snafu(display("Failed to get free space information"))]
     FreeSpace { source: FreeSpaceError },
+    #[snafu(display("SQLite error"))]
+    Sqlite { source: sea_orm::error::DbErr },
     #[snafu(display("An other error occurred"))]
     Other {
         source: Box<dyn snafu::Error + Send + Sync + 'static>,

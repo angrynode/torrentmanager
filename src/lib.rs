@@ -4,6 +4,7 @@ use axum::serve::Listener;
 use static_serve::embed_assets;
 
 pub mod config;
+pub mod database;
 pub mod extractors;
 pub mod middleware;
 pub mod routes;

@@ -1,5 +1,6 @@
 use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
+use sea_orm::{Database, DatabaseConnection};
 use snafu::prelude::*;
 
 use crate::config::AppConfig;
@@ -18,6 +19,9 @@ use free_space::FreeSpace;
 pub struct AppState {
     // Global configuration for TorrentManager
     pub config: AppConfig,
+
+    /// Sqlite database
+    pub database: DatabaseConnection,
 
     // TODO: multiple torrent backends
     pub torrent_client: QBittorrentClient,
@@ -61,8 +65,14 @@ impl AppState {
         )
         .context(InitAPISnafu)?;
 
+        let sqlite_path = config.sqlite_path.clone();
+
         Ok(Self {
             config,
+            // TODO: dehardcode
+            database: Database::connect(format!("sqlite://{}?mode=rwc", &sqlite_path))
+                .await
+                .context(SqliteSnafu)?,
             torrent_client,
         })
     }

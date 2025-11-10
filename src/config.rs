@@ -89,6 +89,9 @@ pub struct AppConfig {
     /// TODO: settings to change permissions on the socket to allow eg. httpd group to read/write
     #[serde(default = "AppConfig::default_listener_address")]
     pub listen: ListenerAddress,
+
+    #[serde(default = "AppConfig::default_sqlite_path")]
+    pub sqlite_path: Utf8PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -110,13 +113,21 @@ impl AppConfig {
         "127.0.0.1:8000".parse().unwrap()
     }
 
-    pub async fn load_from_xdg() -> Result<Self, ConfigError> {
+    pub fn config_dir() -> Utf8PathBuf {
         // Will not panic unless $HOME isn't set
         let config_dir = Self::xdg_base_directories().get_config_home().unwrap();
 
         // Ensure we have valid UTF8 in the path
-        let config_dir = Utf8PathBuf::from_path_buf(config_dir).unwrap();
+        Utf8PathBuf::from_path_buf(config_dir).unwrap()
+    }
 
+    pub fn default_sqlite_path() -> Utf8PathBuf {
+        // At this point the directory has already been successfully created
+        Self::config_dir().join("database.sqlite")
+    }
+
+    pub async fn load_from_xdg() -> Result<Self, ConfigError> {
+        let config_dir = Self::config_dir();
         create_dir_all(&config_dir)
             .await
             .context(FailedConfigDirSnafu {
