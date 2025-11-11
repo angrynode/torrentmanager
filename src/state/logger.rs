@@ -1,9 +1,10 @@
 use camino::Utf8PathBuf;
 use snafu::prelude::*;
 use tokio::fs::{File, OpenOptions};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::RwLock;
 
+use std::io::SeekFrom;
 use std::sync::Arc;
 
 use crate::database::operation::OperationLog;
@@ -33,6 +34,11 @@ pub enum LoggerError {
     Parse {
         path: Utf8PathBuf,
         source: serde_json::Error,
+    },
+    #[snafu(display("Other IO error with operaitons log {path}"))]
+    IO {
+        path: Utf8PathBuf,
+        source: std::io::Error,
     },
 }
 
@@ -81,5 +87,30 @@ impl Logger {
             })?;
 
         Ok(())
+    }
+
+    pub async fn read(&self) -> Result<Vec<OperationLog>, LoggerError> {
+        // When in append mode, the cursor may be set to the end of file
+        // so start again from the beginning
+        let mut s = String::new();
+        {
+            let mut handle = self.handle.write().await;
+            handle.seek(SeekFrom::Start(0)).await.context(IOSnafu {
+                path: self.path.to_path_buf(),
+            })?;
+
+            handle.read_to_string(&mut s).await.context(ReadSnafu {
+                path: self.path.to_path_buf(),
+            })?;
+        }
+
+        // Now that we have dropped the RwLock, parse the results
+        s.lines()
+            .map(|entry| {
+                serde_json::from_str(entry).context(ParseSnafu {
+                    path: self.path.to_path_buf(),
+                })
+            })
+            .collect()
     }
 }

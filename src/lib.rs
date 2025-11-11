@@ -23,7 +23,7 @@ pub fn router(state: state::AppState) -> Router {
         .route("/categories", get(routes::category::index))
         .route("/categories", post(routes::category::create))
         .route("/categories/new", get(routes::category::new))
-        .route("/categories/{id}/delete", get(routes::category::delete))
+        .route("/logs", get(routes::logs::index))
         // Register static assets routes
         .nest("/assets", static_router())
         // Insert request timing

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block main %}
+<h1 class="title" style="text-align: center;">Logs</h1>
+
+{% for log in logs %}
+<details>
+<summary>
+{{ log.date }} {% if let Some(log_user) = log.user %}{{ log_user }}{% endif %}{{ log.operation }} on table {{ log.table }}: {{ log.operation_id.name }} ({{ log.operation_id.object_id }})
+</summary>
+{{ log.operation_form }}
+</details>
+{% endfor %}
+{% endblock %}

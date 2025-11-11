@@ -1,11 +1,12 @@
 use chrono::{DateTime, Utc};
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
 
 /// Type of operation applied to the database.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum OperationType {
     Create,
     Update,
@@ -18,7 +19,7 @@ pub struct OperationId {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum Table {
     Category,
 }
@@ -30,6 +31,12 @@ pub enum Table {
 #[serde(untagged)]
 pub enum Operation {
     Category(CategoryForm),
+}
+
+impl std::fmt::Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &serde_json::to_string(self).unwrap())
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
