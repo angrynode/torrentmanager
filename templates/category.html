@@ -13,6 +13,12 @@
 </ul>
 {% endif %}
 
+{% if let Some(created) = created %}
+<div class="box is-flex is-justify-content-center is-align-items-center is-flex-direction-column" style="margin: 1rem auto; text-align: center; max-width: 512px; gap: 20px; border: solid 1px black;">
+	<h2>Created category {{ created.name }} (ID {{ created.id }})</h2>
+</div>
+{% endif %}
+
 <form method="POST" action="/category" accept-charset="utf-8">
 	<div class="box is-flex is-justify-content-center is-align-items-center is-flex-direction-column" style="margin: 1rem auto; text-align: center; max-width: 512px; gap: 20px; border: solid 1px black;">
 		<h2>Create new</h2>
