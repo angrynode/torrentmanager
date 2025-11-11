@@ -85,6 +85,13 @@ impl Logger {
             .context(AppendSnafu {
                 path: self.path.to_path_buf(),
             })?;
+        handle.write(b"\n").await.context(AppendSnafu {
+            path: self.path.to_path_buf(),
+        })?;
+
+        handle.flush().await.context(IOSnafu {
+            path: self.path.to_path_buf(),
+        })?;
 
         Ok(())
     }
@@ -112,5 +119,105 @@ impl Logger {
                 })
             })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use async_tempfile::TempFile;
+    use camino::Utf8PathBuf;
+    use chrono::Utc;
+    use tokio::task::JoinSet;
+
+    use super::*;
+    use crate::database::operation::*;
+    use crate::extractors::user::User;
+    use crate::routes::category::CategoryForm;
+
+    #[tokio::test]
+    async fn many_writers() {
+        let mut set = JoinSet::new();
+        let tmpfile =
+            Utf8PathBuf::from_path_buf(TempFile::new().await.unwrap().file_path().to_path_buf())
+                .unwrap();
+        let logger = Logger::new(tmpfile.clone()).await.unwrap();
+
+        let operation_log = OperationLog {
+            user: Some(User("foo".to_string())),
+            date: Utc::now(),
+            table: Table::Category,
+            operation: OperationType::Create,
+            operation_id: OperationId {
+                name: "object".to_string(),
+                object_id: 1,
+            },
+            operation_form: Operation::Category(CategoryForm {
+                name: "object".to_string(),
+                path: "path".to_string(),
+            }),
+        };
+
+        for _i in 0..100 {
+            let logger = logger.clone();
+            let operation_log = operation_log.clone();
+            set.spawn(async move { logger.write(operation_log).await });
+        }
+
+        for task in set.join_all().await {
+            assert!(task.is_ok());
+        }
+
+        let s = tokio::fs::read_to_string(&tmpfile).await.unwrap();
+        println!("{s}");
+
+        let logs = logger.read().await.unwrap();
+        assert_eq!(logs.len(), 100);
+    }
+
+    #[tokio::test]
+    async fn mixed_readers_writers() {
+        let mut set = JoinSet::new();
+        let tmpfile =
+            Utf8PathBuf::from_path_buf(TempFile::new().await.unwrap().file_path().to_path_buf())
+                .unwrap();
+        let logger = Logger::new(tmpfile.clone()).await.unwrap();
+
+        let operation_log = OperationLog {
+            user: Some(User("foo".to_string())),
+            date: Utc::now(),
+            table: Table::Category,
+            operation: OperationType::Create,
+            operation_id: OperationId {
+                name: "object".to_string(),
+                object_id: 1,
+            },
+            operation_form: Operation::Category(CategoryForm {
+                name: "object".to_string(),
+                path: "path".to_string(),
+            }),
+        };
+
+        for i in 0..200 {
+            let logger = logger.clone();
+            if i % 2 == 0 {
+                let operation_log = operation_log.clone();
+                set.spawn(async move { logger.write(operation_log).await });
+            } else {
+                set.spawn(async move {
+                    let _ = logger.read().await?;
+                    Ok(())
+                });
+            }
+        }
+
+        for task in set.join_all().await {
+            assert!(task.is_ok());
+        }
+
+        let s = tokio::fs::read_to_string(&tmpfile).await.unwrap();
+        println!("{s}");
+
+        let logs = logger.read().await.unwrap();
+        assert_eq!(logs.len(), 100);
     }
 }

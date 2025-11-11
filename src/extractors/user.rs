@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Cannot be produced outside of header extraction.
 #[derive(Clone, Debug, Display, Deserialize, Serialize)]
 #[serde(transparent)]
-pub struct User(String);
+pub struct User(pub String);
 
 impl<S> OptionalFromRequestParts<S> for User
 where
