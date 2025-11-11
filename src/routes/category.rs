@@ -3,11 +3,9 @@ use askama_web::WebTemplate;
 use axum::Form;
 use axum::extract::State;
 // use sea_orm::entity::*;
-use sea_orm::*;
 use serde::Deserialize;
-use snafu::prelude::*;
 
-use crate::database::{category, category::Entity as Category};
+use crate::database::{category, category::CategoryOperator};
 use crate::extractors::user::User;
 use crate::state::{AppState, AppStateContext, error::*};
 
@@ -32,14 +30,20 @@ pub struct CategoryTemplate {
 
 pub async fn create(
     State(app_state): State<AppState>,
-    _user: Option<User>,
-    form: Form<CategoryForm>,
+    user: Option<User>,
+    Form(form): Form<CategoryForm>,
     // ) -> Result<CategoryTemplate, AppStateError> {
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    println!("New category {:?}", form);
-    let Form(CategoryForm { name, path }) = form;
-    app_state.category_create(name, path).await?;
-    Ok("foo")
+    let app_state_context = app_state.context().await?;
+    let categories = CategoryOperator::new(app_state.clone(), user.clone());
+
+    let created = categories.create(&form).await?;
+    Ok(CategoryTemplate {
+        categories: categories.list().await?,
+        created: Some(created),
+        state: app_state_context,
+        user,
+    })
 }
 
 pub async fn index(
@@ -47,14 +51,10 @@ pub async fn index(
     user: Option<User>,
 ) -> Result<CategoryTemplate, AppStateError> {
     let app_state_context = app_state.context().await?;
-
-    let categories = Category::find()
-        .all(&app_state.database)
-        .await
-        .context(SqliteSnafu)?;
+    let categories = CategoryOperator::new(app_state.clone(), user.clone());
 
     Ok(CategoryTemplate {
-        categories,
+        categories: categories.list().await?,
         created: None,
         state: app_state_context,
         user,

@@ -4,6 +4,7 @@ use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
+use crate::database::category::CategoryOperator;
 use crate::extractors::user::User;
 use crate::state::{AppState, AppStateContext, error::*};
 
@@ -31,12 +32,13 @@ pub async fn index(
 ) -> Result<Response, AppStateError> {
     let app_state_context = app_state.context().await?;
 
-    let categories: Vec<String> = app_state
-        .category_list()
+    let categories: Vec<String> = CategoryOperator::new(app_state.clone(), user.clone())
+        .list()
         .await?
         .into_iter()
         .map(|x| x.name)
         .collect();
+
     if categories.is_empty() {
         Ok(crate::routes::category::index(State(app_state), user)
             .await?

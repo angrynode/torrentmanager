@@ -1,4 +1,3 @@
-use camino::Utf8PathBuf;
 use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
 use migration::{Migrator, MigratorTrait};
@@ -6,7 +5,6 @@ use sea_orm::*;
 use snafu::prelude::*;
 
 use crate::config::AppConfig;
-use crate::database::category::{self, CategoryError};
 
 pub mod error;
 pub mod free_space;
@@ -97,58 +95,5 @@ impl AppState {
             .get_files(target)
             .await
             .context(APISnafu)
-    }
-
-    /// List categories
-    ///
-    /// Should not fail, unless SQLite was corrupted for some reason.
-    pub async fn category_list(&self) -> Result<Vec<category::Model>, AppStateError> {
-        category::Entity::find()
-            .all(&self.database)
-            .await
-            .context(SqliteSnafu)
-    }
-
-    /// Create a new category, creating the corresponding directory.
-    ///
-    /// Fails if:
-    ///
-    /// - name or path is already taken (they should be unique)
-    /// - path parent directory does not exist (to avoid completely wrong paths)
-    pub async fn category_create(&self, name: String, path: String) -> Result<(), AppStateError> {
-        let dir = Utf8PathBuf::from(&path);
-        let parent = dir.parent().unwrap();
-
-        if !tokio::fs::try_exists(parent)
-            .await
-            .context(category::IOSnafu)
-            .context(CategorySnafu)?
-        {
-            return Err(CategoryError::ParentDir {
-                path: parent.to_string(),
-            })
-            .context(CategorySnafu);
-        }
-
-        // Check duplicates
-        let list = self.category_list().await?;
-        if list.iter().any(|x| x.name == name) {
-            return Err(CategoryError::NameTaken { name }).context(CategorySnafu);
-        }
-        if list.iter().any(|x| x.path == path) {
-            return Err(CategoryError::PathTaken { path }).context(CategorySnafu);
-        }
-
-        category::ActiveModel {
-            name: Set(name),
-            path: Set(path),
-            ..Default::default()
-        }
-        .save(&self.database)
-        .await
-        .context(category::DBSnafu)
-        .context(CategorySnafu)?;
-
-        Ok(())
     }
 }
