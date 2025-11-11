@@ -43,7 +43,9 @@ serde = { version = "1.0.219", features = ["derive", "rc"] }
 # Error declaration/context
 snafu = "0.8.8"
 # Serve static assets directly from the binary
-static-serve = "0.3.0"
+# Wait for https://github.com/M4SS-Code/static-serve/pull/8
+# static-serve = "0.3.0"
+static-serve = { git = "https://github.com/angrynode/static-serve", branch = "infallible-mimetype", features = [ "infallible" ] }
 # Extra tokio features:
 #   fs: Filesystem IO integration
 #   rt: Single-threaded runtime

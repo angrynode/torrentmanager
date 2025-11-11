@@ -1827,9 +1827,8 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "static-serve"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282e0dfe270a1e57bbcff5d808bfa819309b872ed90fcd9efc53897647271ecb"
+version = "0.4.0"
+source = "git+https://github.com/angrynode/static-serve?branch=infallible-mimetype#51b54e3b82d0f781fe58a7337f7a8ca307e55568"
 dependencies = [
  "axum",
  "bytes",
@@ -1838,9 +1837,8 @@ dependencies = [
 
 [[package]]
 name = "static-serve-macro"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f1cf3b55de05e1ba299005d96e2844affbe6e55711face7496bf2ef3a69b6ec"
+version = "0.4.0"
+source = "git+https://github.com/angrynode/static-serve?branch=infallible-mimetype#51b54e3b82d0f781fe58a7337f7a8ca307e55568"
 dependencies = [
  "display_full_error",
  "flate2",
