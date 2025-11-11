@@ -74,7 +74,9 @@ impl AppState {
             .context(SqliteSnafu)?;
         Migrator::up(&database, None).await.unwrap();
 
-        let logger = Logger::new(config.log_path.clone()).await.context(LoggerSnafu)?;
+        let logger = Logger::new(config.log_path.clone())
+            .await
+            .context(LoggerSnafu)?;
 
         Ok(Self {
             config,

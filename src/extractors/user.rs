@@ -3,11 +3,13 @@ use axum::{
     http::{StatusCode, request::Parts},
 };
 use derive_more::Display;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Display)]
 /// A logged-in user, as expressed by the Remote-User header.
 ///
 /// Cannot be produced outside of header extraction.
+#[derive(Clone, Debug, Display, Deserialize, Serialize)]
+#[serde(transparent)]
 pub struct User(String);
 
 impl<S> OptionalFromRequestParts<S> for User

@@ -3,8 +3,7 @@ use askama_web::WebTemplate;
 use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-// use sea_orm::entity::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use crate::database::category::CategoryError;
@@ -12,7 +11,7 @@ use crate::database::{category, category::CategoryOperator};
 use crate::extractors::user::User;
 use crate::state::{AppState, AppStateContext, error::*};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CategoryForm {
     pub name: String,
     pub path: String,
