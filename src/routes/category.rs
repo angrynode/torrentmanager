@@ -104,7 +104,7 @@ pub async fn create(
     let app_state_context = app_state.context().await?;
     let categories = CategoryOperator::new(app_state.clone(), user.clone());
 
-    let created = categories.create(&form).await;
+    let created = categories.create(&form, user.clone()).await;
 
     match created {
         Ok(created) => Ok(CategoriesTemplate {

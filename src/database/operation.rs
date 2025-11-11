@@ -14,7 +14,7 @@ pub enum OperationType {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OperationId {
-    pub object_id: i64,
+    pub object_id: i32,
     pub name: String,
 }
 
@@ -34,11 +34,11 @@ pub enum Operation {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OperationLog {
-    user: Option<User>,
-    date: DateTime<Utc>,
-    table: Table,
-    operation: OperationType,
-    operation_id: OperationId,
+    pub user: Option<User>,
+    pub date: DateTime<Utc>,
+    pub table: Table,
+    pub operation: OperationType,
+    pub operation_id: OperationId,
     // Raw operation parameters
-    operation_form: Operation,
+    pub operation_form: Operation,
 }

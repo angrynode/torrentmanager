@@ -1,11 +1,14 @@
 use camino::Utf8PathBuf;
+use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
+use crate::database::operation::*;
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
 use crate::state::AppState;
+use crate::state::logger::LoggerError;
 
 /// A category to store associated files.
 ///
@@ -43,6 +46,8 @@ pub enum CategoryError {
     DB { source: sea_orm::DbErr },
     #[snafu(display("The category (ID: {id}) does not exist"))]
     NotFound { id: i32 },
+    #[snafu(display("Failed to save the operation log"))]
+    Logger { source: LoggerError },
 }
 
 #[derive(Clone, Debug)]
@@ -88,7 +93,11 @@ impl CategoryOperator {
     ///
     /// - name or path is already taken (they should be unique)
     /// - path parent directory does not exist (to avoid completely wrong paths)
-    pub async fn create(&self, f: &CategoryForm) -> Result<Model, CategoryError> {
+    pub async fn create(
+        &self,
+        f: &CategoryForm,
+        user: Option<User>,
+    ) -> Result<Model, CategoryError> {
         let dir = Utf8PathBuf::from(&f.path);
         let parent = dir.parent().unwrap();
 
@@ -121,6 +130,27 @@ impl CategoryOperator {
         .await
         .context(DBSnafu)?;
 
-        Ok(model.try_into_model().unwrap())
+        // Should not fail
+        let model = model.try_into_model().unwrap();
+
+        let operation_log = OperationLog {
+            user,
+            date: Utc::now(),
+            table: Table::Category,
+            operation: OperationType::Create,
+            operation_id: OperationId {
+                object_id: model.id.to_owned(),
+                name: f.name.to_string(),
+            },
+            operation_form: Operation::Category(f.clone()),
+        };
+
+        self.state
+            .logger
+            .write(operation_log)
+            .await
+            .context(LoggerSnafu)?;
+
+        Ok(model)
     }
 }

@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 
 use std::sync::Arc;
 
-use crate::database::operation::Operation;
+use crate::database::operation::OperationLog;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
@@ -68,7 +68,7 @@ impl Logger {
         })
     }
 
-    pub async fn write(&self, operation: Operation) -> Result<(), LoggerError> {
+    pub async fn write(&self, operation: OperationLog) -> Result<(), LoggerError> {
         // This should never fail
         let operation = serde_json::to_string(&operation).unwrap();
 
