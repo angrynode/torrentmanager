@@ -7,6 +7,7 @@ use snafu::prelude::*;
 
 use crate::database::category::CategoryError;
 use crate::state::free_space::FreeSpaceError;
+use crate::state::logger::LoggerError;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
@@ -19,6 +20,8 @@ pub enum AppStateError {
     FreeSpace { source: FreeSpaceError },
     #[snafu(display("SQLite error"))]
     Sqlite { source: sea_orm::error::DbErr },
+    #[snafu(display("Logger error"))]
+    Logger { source: LoggerError },
     #[snafu(display("An other error occurred"))]
     Other {
         source: Box<dyn snafu::Error + Send + Sync + 'static>,

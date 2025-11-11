@@ -85,6 +85,9 @@ pub struct AppConfig {
 
     #[serde(default = "AppConfig::default_sqlite_path")]
     pub sqlite_path: Utf8PathBuf,
+
+    #[serde(default = "AppConfig::default_log_path")]
+    pub log_path: Utf8PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -117,6 +120,11 @@ impl AppConfig {
     pub fn default_sqlite_path() -> Utf8PathBuf {
         // At this point the directory has already been successfully created
         Self::config_dir().join("database.sqlite")
+    }
+
+    pub fn default_log_path() -> Utf8PathBuf {
+        // At this point the directory has already been successfully created
+        Self::config_dir().join("operations.log")
     }
 
     pub async fn load_from_xdg() -> Result<Self, ConfigError> {

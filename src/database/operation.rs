@@ -22,6 +22,7 @@ pub enum Table {
 ///
 /// Will be saved as an [OperationLog].
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Operation {
     Category(CategoryForm),
 }
@@ -34,5 +35,5 @@ pub struct OperationLog {
     operation: OperationType,
     operation_id: OperationId,
     // Raw operation parameters
-    operation_form: CategoryForm,
+    operation_form: Operation,
 }

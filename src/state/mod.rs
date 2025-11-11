@@ -8,9 +8,11 @@ use crate::config::AppConfig;
 
 pub mod error;
 pub mod free_space;
+pub mod logger;
 
 use error::*;
 use free_space::FreeSpace;
+use logger::Logger;
 
 /// Global application state.
 ///
@@ -23,6 +25,9 @@ pub struct AppState {
 
     /// Sqlite database
     pub database: DatabaseConnection,
+
+    /// Append-only log for operations
+    pub logger: Logger,
 
     // TODO: multiple torrent backends
     pub torrent_client: QBittorrentClient,
@@ -64,15 +69,17 @@ impl AppState {
         .context(InitAPISnafu)?;
 
         let sqlite_path = config.sqlite_path.clone();
-        // TODO: dehardcode
         let database = Database::connect(format!("sqlite://{}?mode=rwc", &sqlite_path))
             .await
             .context(SqliteSnafu)?;
         Migrator::up(&database, None).await.unwrap();
 
+        let logger = Logger::new(config.log_path.clone()).await.context(LoggerSnafu)?;
+
         Ok(Self {
             config,
             database,
+            logger,
             torrent_client,
         })
     }

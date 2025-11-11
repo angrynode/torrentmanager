@@ -43,6 +43,8 @@ migration = { path = "migration" }
 sea-orm = { version = "1.1", features = [ "runtime-tokio", "debug-print", "sqlx-sqlite"] }
 # Serialization/deserialization, for example in path extractors
 serde = { version = "1.0.219", features = ["derive", "rc"] }
+# (De)serialization for operations log
+serde_json = { version = "1" }
 # Error declaration/context
 snafu = "0.8.8"
 # Serve static assets directly from the binary
