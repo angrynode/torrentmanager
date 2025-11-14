@@ -39,9 +39,10 @@ env_logger = "0.11.8"
 hightorrent_api = { git = "https://github.com/angrynode/hightorrent_api" }
 # hightorrent_api = "0.2"
 log = "0.4.27"
-# SQLITE MIGRATIONS (WIP)
-migration = { path = "migration" }
+# SQLite ORM
 sea-orm = { version = "2.0.0-rc.18", features = [ "runtime-tokio", "debug-print", "sqlx-sqlite"] }
+# SQLite migrations
+sea-orm-migration = { version = "2.0.0-rc.18" }
 # Serialization/deserialization, for example in path extractors
 serde = { version = "1.0.219", features = ["derive", "rc"] }
 # (De)serialization for operations log

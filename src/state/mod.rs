@@ -1,10 +1,10 @@
 use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
-use migration::{Migrator, MigratorTrait};
 use sea_orm::*;
 use snafu::prelude::*;
 
 use crate::config::AppConfig;
+use crate::migration::{Migrator, MigratorTrait};
 
 pub mod error;
 pub mod flash_message;

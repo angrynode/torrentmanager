@@ -6,6 +6,7 @@ use snafu::ErrorCompat;
 use snafu::prelude::*;
 
 use crate::database::category::CategoryError;
+use crate::migration::DbErr as MigrationError;
 use crate::state::free_space::FreeSpaceError;
 use crate::state::logger::LoggerError;
 
@@ -29,7 +30,7 @@ pub enum AppStateError {
     #[snafu(display("Category error"))]
     Category { source: CategoryError },
     #[snafu(display("Error during migration"))]
-    Migration { source: migration::DbErr },
+    Migration { source: MigrationError },
 }
 
 impl AppStateError {

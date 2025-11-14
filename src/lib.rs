@@ -7,6 +7,7 @@ pub mod config;
 pub mod database;
 pub mod extractors;
 pub mod middleware;
+pub mod migration;
 pub mod routes;
 pub mod state;
 
