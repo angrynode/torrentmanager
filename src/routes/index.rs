@@ -7,7 +7,6 @@ use snafu::prelude::*;
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
 use crate::database::category::CategoryOperator;
 use crate::extractors::user::User;
-use crate::routes::category::CategoryForm;
 use crate::state::{AppState, AppStateContext, error::*};
 
 use std::collections::HashMap;
@@ -26,8 +25,6 @@ pub struct IndexTemplate {
     pub user: Option<User>,
     /// Categories
     pub categories: Vec<String>,
-    /// Category Form Data
-    pub category_form: Option<CategoryForm>,
 }
 
 pub async fn index(
@@ -49,7 +46,6 @@ pub async fn index(
         post: HashMap::new(),
         user,
         categories,
-        category_form: None,
     }
     .into_response())
 }

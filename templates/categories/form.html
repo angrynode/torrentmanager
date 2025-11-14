@@ -7,7 +7,10 @@
       placeholder="Ex: Movies"
       name="name"
       id="name"
+      {# This is not defined in the homepage modal, when no categories have been created yet #}
+      {% if category_form is defined %}
       {% if let Some(category_form) = category_form %} value="{{ category_form.name }}" {% endif %}
+      {% endif %}
     />
   </div> 
 
@@ -19,7 +22,9 @@
       placeholder="Ex: /mnt/MyBigHdd/DATA"
       name="path"
       id="path"
+      {% if category_form is defined %}
       {% if let Some(category_form) = category_form %} value="{{ category_form.path}}" {% endif %}
+      {% endif %}
     />
   </div>
 
