@@ -1,0 +1,39 @@
+{% extends "layouts/file_system_base.html" %}
+
+{% block breadcrumb %}
+  <li class="breadcrumb-item">
+    <a href="/file-system">
+      Categories
+    </a>
+  </li>
+{% endblock %}
+
+{% block folder_title %}
+  All categories
+{% endblock%}
+
+{% block system_list %}
+  {% for category in categories %}
+    <li class="list-group-item py-3">
+      <a class="d-block text-decoration-none" href="/folders/{{ category.name }}">
+        <div class="row">
+          <div class="col-9">
+            <div class="d-flex align-items-center">
+              <i class="fa fa-folder text-info me-3"></i>
+              <h5 class="mb-0">
+                {{ category.name }} <code class="ms-2"span><small>{{ category.path }}</small></code>
+              </h5>
+            </div>
+          </div>
+          <div class="col-3">
+            <p class="mb-0 fst-italic text-end">
+              <i class="fa fa-chevron-right"></i>
+            </p>
+          </div>
+        </div>
+      </a>
+    </li>
+  {% endfor %}
+{% endblock %}
+
+

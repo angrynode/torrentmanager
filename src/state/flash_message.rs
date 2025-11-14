@@ -1,5 +1,6 @@
 use axum_extra::extract::{CookieJar, cookie::Cookie};
 
+#[derive(Debug)]
 pub struct OperationStatus {
     /// Status of operation
     pub success: bool,
@@ -38,9 +39,14 @@ pub fn get_cookie(jar: CookieJar) -> (CookieJar, Option<OperationStatus>) {
         _ => None,
     };
 
+    let mut operation_status_success_cookie = Cookie::from("operation_status_success");
+    operation_status_success_cookie.set_path("/");
+    let mut operation_status_message_cookie = Cookie::from("operation_status_message");
+    operation_status_message_cookie.set_path("/");
+
     let jar = jar
-        .remove(Cookie::from("operation_status_success"))
-        .remove(Cookie::from("operation_status_message"));
+        .remove(operation_status_success_cookie)
+        .remove(operation_status_message_cookie);
 
     (jar, operation_status)
 }

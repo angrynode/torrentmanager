@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use crate::database::category::CategoryError;
+use crate::database::content_folder::{self, ContentFolderOperator};
 use crate::database::{category, category::CategoryOperator};
 use crate::extractors::user::User;
 use crate::state::flash_message::{OperationStatus, get_cookie};
@@ -43,6 +44,19 @@ pub struct NewCategoryTemplate {
     pub error: Option<CategoryError>,
     /// Default form with value
     pub category_form: Option<CategoryForm>,
+}
+
+#[derive(Template, WebTemplate)]
+#[template(path = "categories/show.html")]
+pub struct CategoryShowTemplate {
+    /// Global application state
+    pub state: AppStateContext,
+    /// Categories found in database
+    pub content_folders: Vec<content_folder::Model>,
+    /// Logged-in user.
+    pub user: Option<User>,
+    /// Category
+    category: category::Model,
 }
 
 pub async fn new(
@@ -143,4 +157,31 @@ pub async fn index(
             flash: operation_status,
         },
     ))
+}
+
+pub async fn show(
+    State(app_state): State<AppState>,
+    user: Option<User>,
+    Path(category_name): Path<String>,
+) -> Result<CategoryShowTemplate, AppStateError> {
+    let app_state_context = app_state.context().await?;
+
+    let category: category::Model = CategoryOperator::new(app_state.clone(), user.clone())
+        .find_by_name(category_name.to_string())
+        .await
+        .context(CategorySnafu)?;
+
+    // get all content folders in this category
+    let content_folders: Vec<content_folder::Model> =
+        ContentFolderOperator::new(app_state.clone(), user.clone())
+            .list_by_parent_and_category(None, category.id)
+            .await
+            .context(ContentFolderSnafu)?;
+
+    Ok(CategoryShowTemplate {
+        content_folders,
+        category,
+        state: app_state_context,
+        user,
+    })
 }

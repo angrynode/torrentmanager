@@ -14,6 +14,7 @@ use crate::state::logger::LoggerError;
 ///
 /// Each category has a name and an associated path on disk, where
 /// symlinks to the content will be created.
+#[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "category")]
 pub struct Model {
@@ -23,10 +24,9 @@ pub struct Model {
     pub name: String,
     #[sea_orm(unique)]
     pub path: String,
+    #[sea_orm(has_many)]
+    pub content_folders: HasMany<super::content_folder::Entity>,
 }
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
 
 #[async_trait::async_trait]
 impl ActiveModelBehavior for ActiveModel {}
@@ -44,8 +44,8 @@ pub enum CategoryError {
     IO { source: std::io::Error },
     #[snafu(display("Database error"))]
     DB { source: sea_orm::DbErr },
-    #[snafu(display("The category (ID: {id}) does not exist"))]
-    NotFound { id: i32 },
+    #[snafu(display("The category ({details}) does not exist"))]
+    NotFound { details: String },
     #[snafu(display("Failed to save the operation log"))]
     Logger { source: LoggerError },
 }
@@ -69,6 +69,37 @@ impl CategoryOperator {
             .all(&self.state.database)
             .await
             .context(DBSnafu)
+    }
+
+    /// Find one category by ID
+    pub async fn find_by_id(&self, id: i32) -> Result<Model, CategoryError> {
+        let category = Entity::find_by_id(id)
+            .one(&self.state.database)
+            .await
+            .context(DBSnafu)?;
+
+        match category {
+            Some(category) => Ok(category),
+            None => Err(CategoryError::NotFound {
+                details: format!("ID: {}", id),
+            }),
+        }
+    }
+
+    /// Find one category by Name
+    pub async fn find_by_name(&self, name: String) -> Result<Model, CategoryError> {
+        let category = Entity::find()
+            .filter(Column::Name.contains(name.clone()))
+            .one(&self.state.database)
+            .await
+            .context(DBSnafu)?;
+
+        match category {
+            Some(category) => Ok(category),
+            None => Err(CategoryError::NotFound {
+                details: format!("NAME: {}", name),
+            }),
+        }
     }
 
     /// Delete a category
@@ -101,7 +132,9 @@ impl CategoryOperator {
 
                 Ok(category_clone.name)
             }
-            None => Err(CategoryError::NotFound { id }),
+            None => Err(CategoryError::NotFound {
+                details: format!("ID: {}", id),
+            }),
         }
     }
 
@@ -139,9 +172,11 @@ impl CategoryOperator {
             });
         }
 
+        // Normalized path to avoid trailing slash
+        let normalized_path = dir.components().collect::<Utf8PathBuf>();
         let model = ActiveModel {
             name: Set(f.name.clone()),
-            path: Set(f.path.clone()),
+            path: Set(normalized_path.into_string()),
             ..Default::default()
         }
         .save(&self.state.database)
