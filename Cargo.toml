@@ -49,9 +49,9 @@ serde_json = { version = "1" }
 # Error declaration/context
 snafu = "0.8.8"
 # Serve static assets directly from the binary
-# Wait for https://github.com/M4SS-Code/static-serve/pull/8
+# Using dev branch because of: https://github.com/M4SS-Code/static-serve/pull/8
 # static-serve = "0.3.0"
-static-serve = { git = "https://github.com/angrynode/static-serve", branch = "infallible-mimetype", features = [ "infallible" ] }
+static-serve = { git = "https://github.com/M4SS-Code/static-serve" }
 # Extra tokio features:
 #   fs: Filesystem IO integration
 #   rt: Single-threaded runtime

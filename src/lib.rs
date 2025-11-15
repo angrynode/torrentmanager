@@ -14,7 +14,7 @@ use state::error::AppStateError;
 
 pub fn router(state: state::AppState) -> Router {
     // Embed the assets in the binary, generating the static_router function
-    embed_assets!("assets");
+    embed_assets!("assets", allow_unknown_extensions = true);
 
     Router::new()
         // Register dynamic routes

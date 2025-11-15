@@ -3360,7 +3360,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "static-serve"
 version = "0.4.0"
-source = "git+https://github.com/angrynode/static-serve?branch=infallible-mimetype#51b54e3b82d0f781fe58a7337f7a8ca307e55568"
+source = "git+https://github.com/M4SS-Code/static-serve#33ebf1892a8d68e0aacbee0b32b1296e6fe4eebb"
 dependencies = [
  "axum",
  "bytes",
@@ -3370,7 +3370,7 @@ dependencies = [
 [[package]]
 name = "static-serve-macro"
 version = "0.4.0"
-source = "git+https://github.com/angrynode/static-serve?branch=infallible-mimetype#51b54e3b82d0f781fe58a7337f7a8ca307e55568"
+source = "git+https://github.com/M4SS-Code/static-serve#33ebf1892a8d68e0aacbee0b32b1296e6fe4eebb"
 dependencies = [
  "display_full_error",
  "flate2",
