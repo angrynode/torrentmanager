@@ -4,8 +4,9 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
+use crate::database::operation::*;
 use crate::database::operator::DatabaseOperator;
-use crate::database::{content_folder, operation::*};
+use crate::database::{content_folder, magnet};
 use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
@@ -27,7 +28,9 @@ pub struct Model {
     #[sea_orm(unique)]
     pub path: NormalizedPathAbsolute,
     #[sea_orm(has_many)]
-    pub content_folders: HasMany<super::content_folder::Entity>,
+    pub content_folders: HasMany<content_folder::Entity>,
+    #[sea_orm(has_many)]
+    pub magnets: HasMany<magnet::Entity>,
 }
 
 #[async_trait::async_trait]

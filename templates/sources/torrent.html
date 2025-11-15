@@ -2,13 +2,19 @@
   <div class="card-body">
     <h2 class="text-center">Torrent file</h2>
 
-    <div class="row align-items-center">
-      <div class="col-md-3 text-center">
-        <img src="/assets/images/torrent.png" class="img-64">
+    <form method="POST" action="/torrent/upload" enctype="multipart/form-data" accept-charset="utf-8">
+      <div class="row align-items-center">
+        <div class="col-md-3 text-center">
+          <img src="/assets/images/torrent.png" class="img-64">
+        </div>
+        <div class="col-md-9">
+          <input type="file" id="torrent" name="torrent" class="form-control">
+          <div class="text-center mt-4">
+            {# TODO: Implement torrent upload form #}
+            <input disabled type="Submit" class="btn btn-success btn-lg" value="Next">
+          </div>
+        </div>
       </div>
-      <div class="col-md-9">
-        <input type="file" id="torrent" name="torrent" class="form-control">
-      </div>
-    </div>
+    </form>
   </div>
 </div>

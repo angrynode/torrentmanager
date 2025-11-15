@@ -1,4 +1,6 @@
-use crate::database::{category::CategoryOperator, content_folder::ContentFolderOperator};
+use crate::database::{
+    category::CategoryOperator, content_folder::ContentFolderOperator, magnet::MagnetOperator,
+};
 use crate::extractors::user::User;
 use crate::state::AppState;
 
@@ -22,6 +24,13 @@ impl DatabaseOperator {
 
     pub fn content_folder(&self) -> ContentFolderOperator {
         ContentFolderOperator {
+            state: self.state.clone(),
+            user: self.user.clone(),
+        }
+    }
+
+    pub fn magnet(&self) -> MagnetOperator {
+        MagnetOperator {
             state: self.state.clone(),
             user: self.user.clone(),
         }

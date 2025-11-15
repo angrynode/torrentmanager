@@ -4,13 +4,18 @@
       <label for="magnet">Magnet link</label>
     </h2>
 
-    <div class="row align-items-center">
-      <div class="col-md-3 text-center">
-        <img src="/assets/images/magnet.png" class="img-64">
+    <form method="POST" action="/magnet/upload" accept-charset="utf-8">
+      <div class="row align-items-center">
+        <div class="col-md-3 text-center">
+          <img src="/assets/images/magnet.png" class="img-64">
+        </div>
+        <div class="col-md-9">
+          <input type="text" name="magnet" class="form-control" placeholder="Magnet link to download" id="magnet"{% if let Some(post) = post %} value="{{ post.magnet }}"{% endif %}>
+          <div class="text-center mt-4">
+            <input type="Submit" class="btn btn-success btn-lg" value="Next">
+          </div>
+        </div>
       </div>
-      <div class="col-md-9">
-        <input type="text" name="magnet" class="form-control" placeholder="Magnet link to download" id="magnet"{# TODO {% if post.magnet %} value="{{ post.magnet }}"{% endif %}#}>
-      </div>
-    </div>
+    </form>
   </div>
 </div>

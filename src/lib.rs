@@ -21,7 +21,6 @@ pub fn router(state: state::AppState) -> Router {
     Router::new()
         // Register dynamic routes
         .route("/", get(routes::index::index))
-        .route("/upload", get(routes::index::upload))
         .route("/progress/{view_request}", get(routes::progress::progress))
         .route("/categories", post(routes::category::create))
         .route("/categories/new", get(routes::category::new))
@@ -34,6 +33,10 @@ pub fn router(state: state::AppState) -> Router {
         .route("/folders", get(routes::index::index))
         .route("/folders", post(routes::content_folder::create))
         .route("/logs", get(routes::logs::index))
+        .route("/magnet/upload", post(routes::magnet::upload))
+        .route("/magnet/upload", get(routes::magnet::get_upload))
+        .route("/magnet", get(routes::magnet::list))
+        .route("/magnet/{id}", get(routes::magnet::show))
         // Register static assets routes
         .nest("/assets", static_router())
         // Insert request timing

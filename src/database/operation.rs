@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
 use crate::routes::content_folder::ContentFolderForm;
+use crate::routes::magnet::MagnetForm;
 
 /// Type of operation applied to the database.
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
@@ -24,6 +25,7 @@ pub struct OperationId {
 pub enum Table {
     Category,
     ContentFolder,
+    Magnet,
 }
 
 /// Operation applied to the database.
@@ -34,6 +36,7 @@ pub enum Table {
 pub enum Operation {
     Category(CategoryForm),
     ContentFolder(ContentFolderForm),
+    Magnet(MagnetForm),
 }
 
 impl std::fmt::Display for Operation {

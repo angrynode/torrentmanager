@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block main %}
+  <div class="container">
+    <h1>Download files</h1>
+    
+    {% if state.free_space.free_space_percent < 5 %}
+      <div class="alert alert-warning  mt-4">
+        The disks are almost full : <span class="fw-bold">{{ state.free_space.free_space_gib }} GiB left</span> 
+      </div>
+    {% endif %}
+
+    {% if let Some(error) = post_error %}
+      <div class="notification is-danger alert alert-danger">
+        <details>
+          <summary>{{ error }}</summary>
+          <ul class="ml-5">
+            {% for inner_error in error.inner_errors() %}
+              <li>→ {{ inner_error }}</li>
+            {% endfor %}
+          </ul>
+        </details>
+      </div>
+    {% endif %}
+
+
+    <form method="POST" action="/magnet/upload" accept-charset="utf-8">
+      <div class="card mt-4">
+        <div class="card-body">
+          <div class="form-group">
+            <label for="collection" class="form-label mb-0">Category</label>
+            <div id="collection" class="form-text mb-1">Choose the type of content you want to download.</div>
+            <select class="form-select" aria-label="Choose the type of content you want to download" name="collection">{#{% set post_tag = post.tag %} TODO #}
+              <option disabled {#{% if post_tag is not defined %}selected{% endif %}#}>Genre</option>
+              {% for category in categories %}
+              <option {#{% if post_tag == tag %}selected {% endif %}#}value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-sm">
+          {% include "sources/magnet.html" %}
+        </div>
+    </form>
+
+    {% if categories.len() == 0 %}
+      <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="staticBackdropLabel">Oops, you don't have any categories yet</h1>
+            </div>
+            <div class="modal-body">
+              {% include "categories/form.html" %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.addEventListener("load", (event) => {
+          const modal = new bootstrap.Modal('#staticBackdrop').show()
+        });
+      </script>
+    {% endif %}
+  </div>
+{% endblock %}
