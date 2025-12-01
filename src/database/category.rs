@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
-use crate::database::operation::*;
+use crate::database::{content_folder, operation::*};
 use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
@@ -15,6 +15,7 @@ use crate::state::logger::LoggerError;
 ///
 /// Each category has a name and an associated path on disk, where
 /// symlinks to the content will be created.
+#[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "category")]
 pub struct Model {
@@ -24,10 +25,9 @@ pub struct Model {
     pub name: NormalizedPathComponent,
     #[sea_orm(unique)]
     pub path: NormalizedPathAbsolute,
+    #[sea_orm(has_many)]
+    pub content_folders: HasMany<super::content_folder::Entity>,
 }
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
 
 #[async_trait::async_trait]
 impl ActiveModelBehavior for ActiveModel {}
@@ -74,7 +74,24 @@ impl CategoryOperator {
             .context(DBSnafu)
     }
 
+    /// Find one category by ID
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn find_by_id(&self, id: i32) -> Result<Model, CategoryError> {
+        let category = Entity::find_by_id(id)
+            .one(&self.state.database)
+            .await
+            .context(DBSnafu)?;
+
+        match category {
+            Some(category) => Ok(category),
+            None => Err(CategoryError::IDNotFound { id }),
+        }
+    }
+
     /// Find one category by Name
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
     pub async fn find_by_name(&self, name: String) -> Result<Model, CategoryError> {
         let category = Entity::find()
             .filter(Column::Name.contains(name.clone()))
@@ -85,6 +102,29 @@ impl CategoryOperator {
         match category {
             Some(category) => Ok(category),
             None => Err(CategoryError::NameNotFound { name }),
+        }
+    }
+
+    /// List folders for 1 category
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn list_folders(&self, id: i32) -> Result<Vec<content_folder::Model>, CategoryError> {
+        let category = Entity::find_by_id(id)
+            .one(&self.state.database)
+            .await
+            .context(DBSnafu)?;
+
+        match category {
+            Some(category) => {
+                let folders = category
+                    .find_related(content_folder::Entity)
+                    .filter(Expr::col(content_folder::Column::ParentId).is_null())
+                    .all(&self.state.database)
+                    .await
+                    .context(DBSnafu)?;
+                Ok(folders)
+            }
+            None => Err(CategoryError::IDNotFound { id }),
         }
     }
 

@@ -27,6 +27,11 @@ pub fn router(state: state::AppState) -> Router {
         .route("/categories/new", get(routes::category::new))
         .route("/categories/{id}/delete", get(routes::category::delete))
         .route("/folders/{category_id}", get(routes::category::show))
+        .route(
+            "/folders/{category_name}/{*folder_path}",
+            get(routes::content_folder::show),
+        )
+        .route("/folders", post(routes::content_folder::create))
         .route("/logs", get(routes::logs::index))
         // Register static assets routes
         .nest("/assets", static_router())
