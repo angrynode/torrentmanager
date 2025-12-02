@@ -26,7 +26,7 @@ impl IndexTemplate {
             .await
             .context(CategorySnafu)?
             .into_iter()
-            .map(|x| x.name)
+            .map(|x| x.name.to_string())
             .collect();
 
         Ok(IndexTemplate {

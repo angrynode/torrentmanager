@@ -9,14 +9,15 @@ use snafu::prelude::*;
 
 use crate::database::category::CategoryError;
 use crate::database::{category, category::CategoryOperator};
+use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppState, AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CategoryForm {
-    pub name: String,
-    pub path: String,
+    pub name: NormalizedPathComponent,
+    pub path: NormalizedPathAbsolute,
 }
 
 #[derive(Template, WebTemplate)]

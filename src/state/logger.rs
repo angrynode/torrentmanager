@@ -131,8 +131,11 @@ mod tests {
 
     use super::*;
     use crate::database::operation::*;
+    use crate::extractors::normalized_path::*;
     use crate::extractors::user::User;
     use crate::routes::category::CategoryForm;
+
+    use std::str::FromStr;
 
     #[tokio::test]
     async fn many_writers() {
@@ -152,8 +155,8 @@ mod tests {
                 object_id: 1,
             },
             operation_form: Some(Operation::Category(CategoryForm {
-                name: "object".to_string(),
-                path: "path".to_string(),
+                name: NormalizedPathComponent::from_str("object").unwrap(),
+                path: NormalizedPathAbsolute::from_str("/path").unwrap(),
             })),
         };
 
@@ -192,8 +195,8 @@ mod tests {
                 object_id: 1,
             },
             operation_form: Some(Operation::Category(CategoryForm {
-                name: "object".to_string(),
-                path: "path".to_string(),
+                name: NormalizedPathComponent::from_str("object").unwrap(),
+                path: NormalizedPathAbsolute::from_str("/path").unwrap(),
             })),
         };
 

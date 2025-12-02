@@ -5,6 +5,7 @@ use sea_orm::*;
 use snafu::prelude::*;
 
 use crate::database::operation::*;
+use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
 use crate::state::AppState;
@@ -20,9 +21,9 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     #[sea_orm(unique)]
-    pub name: String,
+    pub name: NormalizedPathComponent,
     #[sea_orm(unique)]
-    pub path: String,
+    pub path: NormalizedPathAbsolute,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -88,7 +89,7 @@ impl CategoryOperator {
                     operation: OperationType::Delete,
                     operation_id: OperationId {
                         object_id: category_clone.id,
-                        name: category_clone.name.to_owned(),
+                        name: category_clone.name.to_string(),
                     },
                     operation_form: None,
                 };
@@ -99,7 +100,7 @@ impl CategoryOperator {
                     .await
                     .context(LoggerSnafu)?;
 
-                Ok(category_clone.name)
+                Ok(category_clone.name.to_string())
             }
             None => Err(CategoryError::NotFound { id }),
         }
@@ -130,12 +131,12 @@ impl CategoryOperator {
 
         if list.iter().any(|x| x.name == f.name) {
             return Err(CategoryError::NameTaken {
-                name: f.name.clone(),
+                name: f.name.to_string(),
             });
         }
         if list.iter().any(|x| x.path == f.path) {
             return Err(CategoryError::PathTaken {
-                path: f.path.clone(),
+                path: f.path.to_string(),
             });
         }
 
