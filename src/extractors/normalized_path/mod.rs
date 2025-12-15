@@ -137,6 +137,14 @@ impl TryFrom<String> for NormalizedPath {
     }
 }
 
+impl TryFrom<Utf8PathBuf> for NormalizedPath {
+    type Error = NormalizeError;
+
+    fn try_from(p: Utf8PathBuf) -> Result<Self, Self::Error> {
+        Self::from_str(p.as_ref())
+    }
+}
+
 impl From<NormalizedPath> for String {
     fn from(p: NormalizedPath) -> Self {
         p.to_string()

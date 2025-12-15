@@ -65,6 +65,14 @@ impl TryFrom<String> for NormalizedPathComponent {
     }
 }
 
+impl TryFrom<Utf8PathBuf> for NormalizedPathComponent {
+    type Error = NormalizeError;
+
+    fn try_from(p: Utf8PathBuf) -> Result<Self, Self::Error> {
+        Self::from_str(p.as_ref())
+    }
+}
+
 impl From<NormalizedPathComponent> for String {
     fn from(p: NormalizedPathComponent) -> Self {
         p.to_string()

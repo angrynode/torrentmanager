@@ -58,6 +58,14 @@ impl TryFrom<String> for NormalizedPathAbsolute {
     }
 }
 
+impl TryFrom<Utf8PathBuf> for NormalizedPathAbsolute {
+    type Error = NormalizeError;
+
+    fn try_from(p: Utf8PathBuf) -> Result<Self, Self::Error> {
+        Self::from_str(p.as_ref())
+    }
+}
+
 impl From<NormalizedPathAbsolute> for String {
     fn from(p: NormalizedPathAbsolute) -> Self {
         p.to_string()

@@ -58,6 +58,14 @@ impl TryFrom<String> for NormalizedPathRelative {
     }
 }
 
+impl TryFrom<Utf8PathBuf> for NormalizedPathRelative {
+    type Error = NormalizeError;
+
+    fn try_from(p: Utf8PathBuf) -> Result<Self, Self::Error> {
+        Self::from_str(p.as_ref())
+    }
+}
+
 impl From<NormalizedPathRelative> for String {
     fn from(p: NormalizedPathRelative) -> Self {
         p.to_string()
