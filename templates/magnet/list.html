@@ -1,33 +1,38 @@
 {% extends "base.html" %}
 
 {% block main %}
-<div class="card mb-4">
-<h2>List of uploaded magnets not yet resolved</h2>
-<div class="table-responsive-lg">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Resolved</th>
-        <th>Name</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    {% for magnet in magnets %}
-    <tr>
-      <td class="py-3">{{ magnet.resolved }}</td>
-      <td class="is-left" align="left"><a href="/magnet/{{ magnet.id }}">{{ magnet.name }}</a></td>
-      <td>
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Actions
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/magnet/{{ magnet.id }}">Voir</a></li>
-          </ul>
+  <div class="container">
+    <h1>List of uploaded magnets not yet resolved</h1>
+
+    <div class="card my-3">
+      <div class="card-body">
+        <div class="table-responsive-lg">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            {% for magnet in magnets %}
+            <tr>
+              <td class="is-left" align="left"><a href="/magnet/{{ magnet.id }}">{{ magnet.name }}</a></td>
+              <td>
+                {% if magnet.resolved %}
+                  <!-- TODO: mettre le lien vers la page des d'import d'un torrent -->
+                  <a href="#" class="btn btn-success">
+                    Importer
+                  </a>
+                {% else %}
+                  <i class="fa fa-spinner fa-pulse me-2"></i>
+                  Resolving…
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
         </div>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
+      </div>
+    </div>
+  </div>
 {% endblock main %}

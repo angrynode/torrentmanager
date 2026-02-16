@@ -7,8 +7,7 @@ use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
-use crate::database::category;
-use crate::database::category::CategoryError;
+use crate::database::category::{self, CategoryError};
 use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::normalized_path::*;
 use crate::filesystem::FileSystemEntry;
@@ -32,11 +31,9 @@ pub struct NewCategoryTemplate {
     pub category_form: Option<CategoryForm>,
 }
 
-pub async fn new(
-    app_state_context: AppStateContext,
-) -> Result<impl axum::response::IntoResponse, AppStateError> {
+pub async fn new(context: AppStateContext) -> Result<NewCategoryTemplate, AppStateError> {
     Ok(NewCategoryTemplate {
-        state: app_state_context,
+        state: context,
         category_form: None,
         error: None,
     })

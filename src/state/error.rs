@@ -77,6 +77,7 @@ pub struct AppStateErrorContextInner {
     // all errors to strings. Maybe related to:
     // https://github.com/askama-rs/askama/issues/393
     errors: Vec<AppStateError>,
+    resolved_magnets_count: usize,
 }
 
 impl From<AppStateError> for AppStateErrorContext {
@@ -84,7 +85,10 @@ impl From<AppStateError> for AppStateErrorContext {
         // An error is being displayed to the user, make sure it's also written in the logs
         e.log();
         Self {
-            state: AppStateErrorContextInner { errors: vec![e] },
+            state: AppStateErrorContextInner {
+                errors: vec![e],
+                resolved_magnets_count: 0,
+            },
         }
     }
 }

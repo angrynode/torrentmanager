@@ -14,6 +14,7 @@ pub struct AppStateContext {
     pub db: DatabaseOperator,
     pub errors: Vec<AppStateError>,
     pub free_space: FreeSpace,
+    pub resolved_magnets_count: usize,
     pub state: AppState,
     pub user: Option<User>,
 }
@@ -26,11 +27,19 @@ impl FromRequestParts<AppState> for AppStateContext {
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let user = User::from_request_parts(parts, state).await?;
+        let db = DatabaseOperator::new(state.clone(), user.clone());
+        let resolved_magnets_count = db
+            .magnet()
+            .list_resolved()
+            .await
+            .context(MagnetUploadSnafu)?
+            .len();
 
         Ok(Self {
-            db: DatabaseOperator::new(state.clone(), user.clone()),
+            db,
             errors: vec![],
             free_space: state.free_space()?,
+            resolved_magnets_count,
             state: state.clone(),
             user,
         })

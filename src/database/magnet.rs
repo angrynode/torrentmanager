@@ -68,6 +68,17 @@ impl MagnetOperator {
             .context(DBSnafu)
     }
 
+    /// List unresolved magnet
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn list_resolved(&self) -> Result<Vec<Model>, MagnetError> {
+        Entity::find()
+            .filter(Column::Resolved.eq(true))
+            .all(&self.state.database)
+            .await
+            .context(DBSnafu)
+    }
+
     pub async fn get(&self, id: i32) -> Result<Model, MagnetError> {
         let db = &self.state.database;
 

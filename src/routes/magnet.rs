@@ -1,12 +1,11 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::extract::{Form, Path};
-use axum::response::{IntoResponse, Response};
+use axum::extract::Form;
+use axum::response::{IntoResponse, Redirect, Response};
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
-use crate::database::category;
-use crate::database::magnet;
+use crate::database::{category, magnet};
 use crate::state::{AppStateContext, error::*};
 
 /// Multipart form submitted to /magnet/upload:
@@ -17,55 +16,25 @@ pub struct MagnetForm {
     pub magnet: String,
 }
 
-#[derive(Template, WebTemplate)]
-#[template(path = "magnet/show.html")]
-pub struct MagnetTemplate {
-    /// Global application state (errors/warnings)
-    pub state: AppStateContext,
-    /// Parsed magnet from form
-    pub magnet: magnet::Model,
-}
-
-pub async fn show(
-    context: AppStateContext,
-    Path(id): Path<i32>,
-) -> Result<impl IntoResponse, AppStateError> {
-    let magnet = context
-        .db
-        .magnet()
-        .get(id)
-        .await
-        .boxed()
-        .context(OtherSnafu)?;
-
-    Ok(MagnetTemplate {
-        state: context,
-        magnet,
-    })
-}
-
 pub async fn upload(
     context: AppStateContext,
     Form(form): Form<MagnetForm>,
 ) -> Result<Response, AppStateError> {
-    // Parse magnet
-    match context
+    // TODO: proper error type
+    if let Err(e) = context
         .db
         .magnet()
         .create(&form)
         .await
         .context(MagnetUploadSnafu)
     {
-        Ok(magnet_model) => Ok(MagnetTemplate {
-            state: context,
-            magnet: magnet_model,
-        }
-        .into_response()),
-        Err(e) => Ok(UploadMagnetTemplate::new(context)
+        return Ok(UploadMagnetTemplate::new(context)
             .await?
             .with_errored_form(form, e)
-            .into_response()),
+            .into_response());
     }
+
+    Ok(Redirect::to("/magnet").into_response())
 }
 
 #[derive(Template, WebTemplate)]
