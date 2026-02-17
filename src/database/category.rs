@@ -128,7 +128,7 @@ impl CategoryOperator {
     }
 
     /// Delete a category
-    pub async fn delete(&self, id: i32, user: Option<User>) -> Result<String, CategoryError> {
+    pub async fn delete(&self, id: i32) -> Result<String, CategoryError> {
         let db = &self.state.database;
         let category: Option<Model> = Entity::find_by_id(id).one(db).await.context(DBSnafu)?;
 
@@ -138,7 +138,7 @@ impl CategoryOperator {
                 category.delete(db).await.context(DBSnafu)?;
 
                 let operation_log = OperationLog {
-                    user,
+                    user: self.user.clone(),
                     date: Utc::now(),
                     table: Table::Category,
                     operation: OperationType::Delete,
@@ -167,11 +167,7 @@ impl CategoryOperator {
     ///
     /// - name or path is already taken (they should be unique)
     /// - path parent directory does not exist (to avoid completely wrong paths)
-    pub async fn create(
-        &self,
-        f: &CategoryForm,
-        user: Option<User>,
-    ) -> Result<Model, CategoryError> {
+    pub async fn create(&self, f: &CategoryForm) -> Result<Model, CategoryError> {
         let dir = Utf8PathBuf::from(&f.path);
         let parent = dir.parent().unwrap();
 
@@ -208,7 +204,7 @@ impl CategoryOperator {
         let model = model.try_into_model().unwrap();
 
         let operation_log = OperationLog {
-            user,
+            user: self.user.clone(),
             date: Utc::now(),
             table: Table::Category,
             operation: OperationType::Create,

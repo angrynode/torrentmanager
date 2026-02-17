@@ -57,7 +57,7 @@ pub async fn delete(
     // let app_state_context = app_state.context().await?;
     let categories = CategoryOperator::new(app_state.clone(), user.clone());
 
-    let deleted = categories.delete(id, user.clone()).await;
+    let deleted = categories.delete(id).await;
 
     let operation_status = match deleted {
         Ok(name) => OperationStatus {
@@ -83,7 +83,7 @@ pub async fn create(
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
     let categories = CategoryOperator::new(app_state.clone(), user.clone());
 
-    let created = categories.create(&form, user.clone()).await;
+    let created = categories.create(&form).await;
 
     match created {
         Ok(created) => {

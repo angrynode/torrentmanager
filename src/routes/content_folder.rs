@@ -115,7 +115,7 @@ pub async fn create(
     // build final path with parent_path and path of form
     form.path = format!("{}/{}", parent_path, form.name);
 
-    let created = content_folder.create(&form, user.clone()).await;
+    let created = content_folder.create(&form).await;
 
     match created {
         Ok(created) => {

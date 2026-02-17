@@ -115,11 +115,7 @@ impl ContentFolderOperator {
     ///
     /// - name or path is already taken (they should be unique in one folder)
     /// - path parent directory does not exist (to avoid completely wrong paths)
-    pub async fn create(
-        &self,
-        f: &ContentFolderForm,
-        user: Option<User>,
-    ) -> Result<Model, ContentFolderError> {
+    pub async fn create(&self, f: &ContentFolderForm) -> Result<Model, ContentFolderError> {
         // Check duplicates in same folder
         let list = if let Some(parent_id) = f.parent_id {
             self.list_child_folders(parent_id).await?
@@ -158,7 +154,7 @@ impl ContentFolderOperator {
         let model = model.try_into_model().unwrap();
 
         let operation_log = OperationLog {
-            user,
+            user: self.user.clone(),
             date: Utc::now(),
             table: Table::ContentFolder,
             operation: OperationType::Create,
