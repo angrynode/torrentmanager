@@ -1,6 +1,6 @@
 <div class="container text-center mt-4"> 
   <div class="d-flex flex-column flex-sm-row gap-0 gap-sm-3 justify-content-between">
-    {% if let Some(user) = user %}
+    {% if let Some(user) = state.user %}
     </p>Logged in as {{ user|safe }}</h3>
     {% else %}
     <p style="font-weight: bolder;">Not logged in.</p>

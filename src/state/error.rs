@@ -36,6 +36,8 @@ pub enum AppStateError {
     ContentFolder { source: ContentFolderError },
     #[snafu(display("IO error"))]
     IO { source: std::io::Error },
+    #[snafu(display("{reason}"))]
+    Static { reason: &'static str },
 }
 
 impl AppStateError {

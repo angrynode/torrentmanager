@@ -17,8 +17,6 @@ pub struct TorrentListTemplate {
     torrent_list: TorrentListContext,
     // Filter object
     filter: TorrentListViewRequest,
-    /// Logged-in user.
-    user: Option<String>,
 }
 
 #[derive(Debug)]
@@ -36,11 +34,10 @@ pub struct TorrentListContext {
 }
 
 pub async fn progress(
+    app_state_context: AppStateContext,
     State(app_state): State<AppState>,
     Path(view_request): Path<TorrentListViewRequest>,
 ) -> Result<TorrentListTemplate, AppStateError> {
-    let app_state_context = app_state.context().await?;
-
     // Failing to load the TorrentListView is a fatal error
     let TorrentListView {
         counter,
@@ -67,6 +64,5 @@ pub async fn progress(
             files,
             torrents: filtered_list,
         },
-        user: None,
     })
 }

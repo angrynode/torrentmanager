@@ -26,8 +26,6 @@ pub struct CategoryForm {
 pub struct NewCategoryTemplate {
     /// Global application state
     pub state: AppStateContext,
-    /// Logged-in user.
-    pub user: Option<User>,
     /// Error
     pub error: Option<CategoryError>,
     /// Default form with value
@@ -35,14 +33,10 @@ pub struct NewCategoryTemplate {
 }
 
 pub async fn new(
-    State(app_state): State<AppState>,
-    user: Option<User>,
+    app_state_context: AppStateContext,
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    let app_state_context = app_state.context().await?;
-
     Ok(NewCategoryTemplate {
         state: app_state_context,
-        user,
         category_form: None,
         error: None,
     })
@@ -119,8 +113,6 @@ pub struct CategoryShowTemplate {
     pub state: AppStateContext,
     /// Categories found in database
     pub content_folders: Vec<content_folder::Model>,
-    /// Logged-in user.
-    pub user: Option<User>,
     /// Category
     category: category::Model,
     /// Operation status for UI confirmation (Cookie)
@@ -128,13 +120,12 @@ pub struct CategoryShowTemplate {
 }
 
 pub async fn show(
+    app_state_context: AppStateContext,
     State(app_state): State<AppState>,
     user: Option<User>,
     Path(category_name): Path<String>,
     jar: CookieJar,
 ) -> Result<impl IntoResponse, AppStateError> {
-    let app_state_context = app_state.context().await?;
-
     let category: category::Model = CategoryOperator::new(app_state.clone(), user.clone())
         .find_by_name(category_name.to_string())
         .await
@@ -155,7 +146,6 @@ pub async fn show(
             content_folders,
             category,
             state: app_state_context,
-            user,
             flash: operation_status,
         },
     ))

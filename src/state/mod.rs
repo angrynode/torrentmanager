@@ -1,9 +1,12 @@
+use axum::extract::{FromRequestParts, OptionalFromRequestParts};
+use axum::http::request::Parts;
 use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
 use sea_orm::*;
 use snafu::prelude::*;
 
 use crate::config::AppConfig;
+use crate::extractors::user::User;
 use crate::migration::{Migrator, MigratorTrait};
 
 pub mod error;
@@ -41,24 +44,26 @@ pub struct AppState {
 /// by rendering the AppStateError into an axum Response.
 pub struct AppStateContext {
     pub errors: Vec<AppStateError>,
-    // pub errors: Vec<String>,
     pub free_space: FreeSpace,
+    pub user: Option<User>,
 }
 
-impl AppStateContext {
-    fn from_app_state(state: &AppState) -> Result<Self, AppStateError> {
+impl FromRequestParts<AppState> for AppStateContext {
+    type Rejection = AppStateError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         Ok(Self {
             errors: vec![],
             free_space: state.free_space()?,
+            user: User::from_request_parts(parts, state).await?,
         })
     }
 }
 
 impl AppState {
-    pub async fn context(&self) -> Result<AppStateContext, AppStateError> {
-        AppStateContext::from_app_state(self)
-    }
-
     pub async fn new(config: AppConfig) -> Result<Self, AppStateError> {
         // TODO: config for torrent backend
 

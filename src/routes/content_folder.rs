@@ -33,8 +33,6 @@ pub struct ContentFolderShowTemplate {
     pub current_content_folder: content_folder::Model,
     /// Folders with parent_id set to current folder
     pub sub_content_folders: Vec<content_folder::Model>,
-    /// Logged-in user.
-    pub user: Option<User>,
     /// Category
     pub category: category::Model,
     /// BreadCrumb extract from path
@@ -46,13 +44,10 @@ pub struct ContentFolderShowTemplate {
 }
 
 pub async fn show(
-    State(app_state): State<AppState>,
+    app_state_context: AppStateContext,
     folder: FolderRequest,
-    user: Option<User>,
     jar: CookieJar,
 ) -> Result<(CookieJar, ContentFolderShowTemplate), AppStateError> {
-    let app_state_context = app_state.context().await?;
-
     let (jar, operation_status) = get_cookie(jar);
 
     Ok((
@@ -64,7 +59,6 @@ pub async fn show(
             current_content_folder: folder.folder,
             category: folder.category,
             state: app_state_context,
-            user,
             flash: operation_status,
         },
     ))

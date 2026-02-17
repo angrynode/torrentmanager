@@ -1,9 +1,8 @@
-use axum::{
-    extract::OptionalFromRequestParts,
-    http::{StatusCode, request::Parts},
-};
+use axum::{extract::OptionalFromRequestParts, http::request::Parts};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
+
+use crate::state::error::AppStateError;
 
 /// A logged-in user, as expressed by the Remote-User header.
 ///
@@ -16,7 +15,7 @@ impl<S> OptionalFromRequestParts<S> for User
 where
     S: Send + Sync,
 {
-    type Rejection = (StatusCode, &'static str);
+    type Rejection = AppStateError;
 
     async fn from_request_parts(
         parts: &mut Parts,
@@ -25,10 +24,9 @@ where
         if let Some(username) = parts.headers.get("remote-user") {
             match username.to_str() {
                 Ok(username) => Ok(Some(User(String::from(username)))),
-                Err(_e) => Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "The remote-user header returned by the reverse proxy is invalid.",
-                )),
+                Err(_e) => Err(AppStateError::Static {
+                    reason: "The remote-user header returned by the reverse proxy is invalid.",
+                }),
             }
         } else {
             Ok(None)
