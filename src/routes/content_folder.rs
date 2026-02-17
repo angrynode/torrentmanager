@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use crate::database::category::CategoryOperator;
-use crate::database::content_folder::ContentFolderOperator;
+use crate::database::content_folder::{ContentFolderOperator, PathBreadcrumb};
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
 use crate::extractors::user::User;
@@ -43,12 +43,6 @@ pub struct ContentFolderShowTemplate {
     pub parent_folder: Option<content_folder::Model>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PathBreadcrumb {
-    pub name: String,
-    pub path: String,
 }
 
 pub async fn show(

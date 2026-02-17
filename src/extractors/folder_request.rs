@@ -3,8 +3,7 @@ use axum::http::request::Parts;
 use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryOperator};
-use crate::database::content_folder::{self, ContentFolderOperator};
-use crate::routes::content_folder::PathBreadcrumb;
+use crate::database::content_folder::{self, ContentFolderOperator, PathBreadcrumb};
 use crate::state::AppState;
 use crate::state::error::*;
 
@@ -49,50 +48,22 @@ impl FromRequestParts<AppState> for FolderRequest {
             .await
             .context(ContentFolderSnafu)?;
 
-        // Read-only operator
         let category: category::Model = category_operator
             .find_by_id(current_content_folder.category_id)
             .await
             .context(CategorySnafu)?;
 
-        // create breadcrumb with ancestor of current folders
-        let mut content_folder_ancestors: Vec<PathBreadcrumb> = Vec::new();
-        // To get Current Parent Folder
-        let mut parent_folder: Option<content_folder::Model> = None;
-
-        content_folder_ancestors.push(PathBreadcrumb {
-            name: current_content_folder.name.clone(),
-            path: current_content_folder.path.clone(),
-        });
-
-        let mut current_id = current_content_folder.parent_id;
-        while let Some(id) = current_id {
-            let folder = content_folder_operator
-                .find_by_id(id)
-                .await
-                .context(ContentFolderSnafu)?;
-
-            if parent_folder.is_none() {
-                parent_folder = Some(folder.clone());
-            }
-
-            content_folder_ancestors.push(PathBreadcrumb {
-                name: folder.name,
-                path: folder.path,
-            });
-
-            current_id = folder.parent_id;
-        }
-
-        // Reverse the ancestor to create Breadrumb
-        content_folder_ancestors.reverse();
+        let ancestors = content_folder_operator
+            .ancestors(&current_content_folder)
+            .await
+            .context(ContentFolderSnafu)?;
 
         Ok(Self {
             category,
             folder: current_content_folder,
             sub_folders: sub_content_folders,
-            ancestors: content_folder_ancestors,
-            parent: parent_folder,
+            ancestors: ancestors.breadcrumbs,
+            parent: ancestors.parent,
         })
     }
 }

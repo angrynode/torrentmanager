@@ -177,4 +177,54 @@ impl ContentFolderOperator {
 
         Ok(model)
     }
+
+    pub async fn ancestors(
+        &self,
+        folder: &Model,
+    ) -> Result<ContentFolderAncestors, ContentFolderError> {
+        let mut ancestors = ContentFolderAncestors::default();
+
+        // Fetch the parent model
+        ancestors.parent = {
+            let Some(parent_id) = folder.parent_id else {
+                // No parent, no ancestors
+                return Ok(ancestors);
+            };
+
+            Some(self.find_by_id(parent_id).await?)
+        };
+
+        ancestors.breadcrumbs.push(PathBreadcrumb {
+            name: ancestors.parent.as_ref().unwrap().name.to_string(),
+            path: ancestors.parent.as_ref().unwrap().path.to_string(),
+        });
+
+        let mut next_id = ancestors.parent.as_ref().unwrap().parent_id;
+        while let Some(id) = next_id {
+            let folder = self.find_by_id(id).await?;
+            ancestors.breadcrumbs.push(PathBreadcrumb {
+                name: folder.name,
+                path: folder.path,
+            });
+            next_id = folder.parent_id;
+        }
+
+        // We walked from the bottom to the top of the folder hierarchy,
+        // but we want breadcrumbs navigation the other way around.
+        ancestors.breadcrumbs.reverse();
+
+        Ok(ancestors)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ContentFolderAncestors {
+    pub parent: Option<Model>,
+    pub breadcrumbs: Vec<PathBreadcrumb>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PathBreadcrumb {
+    pub name: String,
+    pub path: String,
 }
