@@ -7,9 +7,9 @@ use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
+use crate::database::category;
 use crate::database::category::CategoryError;
 use crate::database::content_folder;
-use crate::database::{category, category::CategoryOperator};
 use crate::extractors::normalized_path::*;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
@@ -46,11 +46,7 @@ pub async fn delete(
     Path(id): Path<i32>,
     jar: CookieJar,
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    let categories = CategoryOperator::new(context.state.clone(), context.user.clone());
-
-    let deleted = categories.delete(id).await;
-
-    let operation_status = match deleted {
+    let operation_status = match context.db.category().delete(id).await {
         Ok(name) => OperationStatus {
             success: true,
             message: format!("The category {} has been successfully deleted", name),
@@ -71,11 +67,7 @@ pub async fn create(
     jar: CookieJar,
     Form(form): Form<CategoryForm>,
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    let categories = CategoryOperator::new(context.state.clone(), context.user.clone());
-
-    let created = categories.create(&form).await;
-
-    match created {
+    match context.db.category().create(&form).await {
         Ok(created) => {
             let operation_status = OperationStatus {
                 success: true,
@@ -120,7 +112,7 @@ pub async fn show(
     Path(category_name): Path<String>,
     jar: CookieJar,
 ) -> Result<impl IntoResponse, AppStateError> {
-    let categories = CategoryOperator::new(context.state.clone(), context.user.clone());
+    let categories = context.db.category();
 
     let category = categories
         .find_by_name(category_name.to_string())

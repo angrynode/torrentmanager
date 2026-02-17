@@ -7,8 +7,7 @@ use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
-use crate::database::category::CategoryOperator;
-use crate::database::content_folder::{ContentFolderOperator, PathBreadcrumb};
+use crate::database::content_folder::PathBreadcrumb;
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
 use crate::state::flash_message::{OperationStatus, get_cookie};
@@ -67,12 +66,12 @@ pub async fn create(
     jar: CookieJar,
     Form(mut form): Form<ContentFolderForm>,
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    // let app_state_context = app_state.context().await?;
-    let content_folder = ContentFolderOperator::new(context.state.clone(), context.user.clone());
+    let categories = context.db.category();
+    let content_folders = context.db.content_folder();
 
     // build path with Parent folder path (or category path if parent is None) + folder.name
     let parent_path = if let Some(parent_id) = form.parent_id {
-        let parent_folder = content_folder
+        let parent_folder = content_folders
             .find_by_id(parent_id)
             .await
             .context(ContentFolderSnafu)?;
@@ -82,11 +81,10 @@ pub async fn create(
     };
 
     // Get folder category
-    let category: category::Model =
-        CategoryOperator::new(context.state.clone(), context.user.clone())
-            .find_by_id(form.category_id)
-            .await
-            .context(CategorySnafu)?;
+    let category: category::Model = categories
+        .find_by_id(form.category_id)
+        .await
+        .context(CategorySnafu)?;
 
     // If name contains "/" returns an error
     if form.name.contains("/") {
@@ -107,7 +105,7 @@ pub async fn create(
     // build final path with parent_path and path of form
     form.path = format!("{}/{}", parent_path, form.name);
 
-    let created = content_folder.create(&form).await;
+    let created = content_folders.create(&form).await;
 
     match created {
         Ok(created) => {

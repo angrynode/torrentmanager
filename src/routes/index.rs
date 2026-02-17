@@ -4,7 +4,7 @@ use axum_extra::extract::CookieJar;
 use snafu::prelude::*;
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
-use crate::database::category::{self, CategoryOperator};
+use crate::database::category;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -33,10 +33,7 @@ impl IndexTemplate {
         context: AppStateContext,
         jar: CookieJar,
     ) -> Result<(CookieJar, Self), AppStateError> {
-        let categories = CategoryOperator::new(context.state.clone(), context.user.clone())
-            .list()
-            .await
-            .context(CategorySnafu)?;
+        let categories = context.db.category().list().await.context(CategorySnafu)?;
 
         let (jar, operation_status) = get_cookie(jar);
 
@@ -53,14 +50,15 @@ impl IndexTemplate {
 
 impl UploadTemplate {
     pub async fn new(context: AppStateContext) -> Result<Self, AppStateError> {
-        let categories: Vec<String> =
-            CategoryOperator::new(context.state.clone(), context.user.clone())
-                .list()
-                .await
-                .context(CategorySnafu)?
-                .into_iter()
-                .map(|x| x.name.to_string())
-                .collect();
+        let categories: Vec<String> = context
+            .db
+            .category()
+            .list()
+            .await
+            .context(CategorySnafu)?
+            .into_iter()
+            .map(|x| x.name.to_string())
+            .collect();
 
         Ok(UploadTemplate {
             state: context,

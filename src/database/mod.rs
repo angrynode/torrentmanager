@@ -2,3 +2,4 @@
 pub mod category;
 pub mod content_folder;
 pub mod operation;
+pub mod operator;
