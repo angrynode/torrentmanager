@@ -1,7 +1,7 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::Form;
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::{IntoResponse, Redirect};
 use axum_extra::extract::CookieJar;
 use camino::Utf8PathBuf;
@@ -11,6 +11,7 @@ use snafu::prelude::*;
 use crate::database::category::CategoryOperator;
 use crate::database::content_folder::ContentFolderOperator;
 use crate::database::{category, content_folder};
+use crate::extractors::folder_request::FolderRequest;
 use crate::extractors::user::User;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppState, AppStateContext, error::*};
@@ -44,6 +45,7 @@ pub struct ContentFolderShowTemplate {
     pub flash: Option<OperationStatus>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct PathBreadcrumb {
     pub name: String,
     pub path: String,
@@ -51,75 +53,22 @@ pub struct PathBreadcrumb {
 
 pub async fn show(
     State(app_state): State<AppState>,
+    folder: FolderRequest,
     user: Option<User>,
-    Path((_category_name, folder_path)): Path<(String, String)>,
     jar: CookieJar,
 ) -> Result<(CookieJar, ContentFolderShowTemplate), AppStateError> {
     let app_state_context = app_state.context().await?;
-
-    let content_folder_operator = ContentFolderOperator::new(app_state.clone(), user.clone());
-
-    // get current content folders with Path
-    let current_content_folder = content_folder_operator
-        // must format to add "/" in front of path like in DB
-        .find_by_path(format!("/{}", folder_path))
-        .await
-        .context(ContentFolderSnafu)?;
-
-    // Get all sub content folders of the current folder
-    let sub_content_folders: Vec<content_folder::Model> = content_folder_operator
-        .list_child_folders(current_content_folder.id)
-        .await
-        .context(ContentFolderSnafu)?;
-
-    // Get current categories
-    let category: category::Model = CategoryOperator::new(app_state.clone(), user.clone())
-        .find_by_id(current_content_folder.category_id)
-        .await
-        .context(CategorySnafu)?;
-
-    // create breadcrumb with ancestor of current folders
-    let mut content_folder_ancestors: Vec<PathBreadcrumb> = Vec::new();
-    // To get Current Parent Folder
-    let mut parent_folder: Option<content_folder::Model> = None;
-
-    content_folder_ancestors.push(PathBreadcrumb {
-        name: current_content_folder.name.clone(),
-        path: current_content_folder.path.clone(),
-    });
-
-    let mut current_id = current_content_folder.parent_id;
-    while let Some(id) = current_id {
-        let folder = content_folder_operator
-            .find_by_id(id)
-            .await
-            .context(ContentFolderSnafu)?;
-
-        if parent_folder.is_none() {
-            parent_folder = Some(folder.clone());
-        }
-
-        content_folder_ancestors.push(PathBreadcrumb {
-            name: folder.name,
-            path: folder.path,
-        });
-
-        current_id = folder.parent_id;
-    }
-
-    // Reverse the ancestor to create Breadrumb
-    content_folder_ancestors.reverse();
 
     let (jar, operation_status) = get_cookie(jar);
 
     Ok((
         jar,
         ContentFolderShowTemplate {
-            parent_folder,
-            breadcrumb_items: content_folder_ancestors,
-            sub_content_folders,
-            current_content_folder,
-            category,
+            parent_folder: folder.parent,
+            breadcrumb_items: folder.ancestors,
+            sub_content_folders: folder.sub_folders,
+            current_content_folder: folder.folder,
+            category: folder.category,
             state: app_state_context,
             user,
             flash: operation_status,

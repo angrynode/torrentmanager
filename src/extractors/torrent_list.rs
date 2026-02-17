@@ -83,7 +83,7 @@ impl TorrentListFilter {
         };
 
         // Sort list by the latest added torrent (reverse order date_start)
-        list.sort_unstable_by(|a, b| b.date_start.cmp(&a.date_start));
+        list.sort_unstable_by_key(|b| std::cmp::Reverse(b.date_start));
         list
     }
 }
