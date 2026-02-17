@@ -1,13 +1,12 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::extract::State;
 use axum_extra::extract::CookieJar;
 use snafu::prelude::*;
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
 use crate::database::category::{self, CategoryOperator};
 use crate::state::flash_message::{OperationStatus, get_cookie};
-use crate::state::{AppState, AppStateContext, error::*};
+use crate::state::{AppStateContext, error::*};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "index.html")]
@@ -31,11 +30,10 @@ pub struct UploadTemplate {
 
 impl IndexTemplate {
     pub async fn new(
-        app_state_context: AppStateContext,
-        app_state: AppState,
+        context: AppStateContext,
         jar: CookieJar,
     ) -> Result<(CookieJar, Self), AppStateError> {
-        let categories = CategoryOperator::new(app_state.clone(), app_state_context.user.clone())
+        let categories = CategoryOperator::new(context.state.clone(), context.user.clone())
             .list()
             .await
             .context(CategorySnafu)?;
@@ -45,7 +43,7 @@ impl IndexTemplate {
         Ok((
             jar,
             IndexTemplate {
-                state: app_state_context,
+                state: context,
                 categories,
                 flash: operation_status,
             },
@@ -54,12 +52,9 @@ impl IndexTemplate {
 }
 
 impl UploadTemplate {
-    pub async fn new(
-        app_state_context: AppStateContext,
-        app_state: AppState,
-    ) -> Result<Self, AppStateError> {
+    pub async fn new(context: AppStateContext) -> Result<Self, AppStateError> {
         let categories: Vec<String> =
-            CategoryOperator::new(app_state.clone(), app_state_context.user.clone())
+            CategoryOperator::new(context.state.clone(), context.user.clone())
                 .list()
                 .await
                 .context(CategorySnafu)?
@@ -68,23 +63,19 @@ impl UploadTemplate {
                 .collect();
 
         Ok(UploadTemplate {
-            state: app_state_context,
+            state: context,
             categories,
         })
     }
 }
 
 pub async fn index(
-    app_state_context: AppStateContext,
-    State(app_state): State<AppState>,
+    context: AppStateContext,
     jar: CookieJar,
 ) -> Result<(CookieJar, IndexTemplate), AppStateError> {
-    IndexTemplate::new(app_state_context, app_state, jar).await
+    IndexTemplate::new(context, jar).await
 }
 
-pub async fn upload(
-    app_state_context: AppStateContext,
-    State(app_state): State<AppState>,
-) -> Result<UploadTemplate, AppStateError> {
-    UploadTemplate::new(app_state_context, app_state).await
+pub async fn upload(context: AppStateContext) -> Result<UploadTemplate, AppStateError> {
+    UploadTemplate::new(context).await
 }

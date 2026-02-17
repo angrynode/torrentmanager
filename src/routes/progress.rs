@@ -1,12 +1,12 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use hightorrent_api::hightorrent::{SingleTarget, Torrent, TorrentContent};
 
 use crate::extractors::torrent_list::{
     TorrentListCounter, TorrentListFilter, TorrentListView, TorrentListViewRequest,
 };
-use crate::state::{AppState, AppStateContext, error::AppStateError};
+use crate::state::{AppStateContext, error::AppStateError};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "progress.html")]
@@ -34,21 +34,21 @@ pub struct TorrentListContext {
 }
 
 pub async fn progress(
-    app_state_context: AppStateContext,
-    State(app_state): State<AppState>,
+    context: AppStateContext,
     Path(view_request): Path<TorrentListViewRequest>,
 ) -> Result<TorrentListTemplate, AppStateError> {
     // Failing to load the TorrentListView is a fatal error
     let TorrentListView {
         counter,
         filtered_list,
-    } = TorrentListView::apply_request(view_request.clone(), &app_state).await?;
+    } = TorrentListView::apply_request(view_request.clone(), &context.state).await?;
 
     // If only one torrent is inspected, display the content files
     let files = if filtered_list.len() == 1 {
         let torrent_id = &filtered_list.first().unwrap().id;
         Some(
-            app_state
+            context
+                .state
                 .torrent_get_files(&SingleTarget::from(torrent_id))
                 .await?,
         )
@@ -57,7 +57,7 @@ pub async fn progress(
     };
 
     Ok(TorrentListTemplate {
-        state: app_state_context,
+        state: context,
         filter: view_request,
         torrent_list: TorrentListContext {
             counter,

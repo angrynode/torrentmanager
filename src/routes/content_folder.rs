@@ -1,7 +1,6 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::Form;
-use axum::extract::State;
 use axum::response::{IntoResponse, Redirect};
 use axum_extra::extract::CookieJar;
 use camino::Utf8PathBuf;
@@ -12,9 +11,8 @@ use crate::database::category::CategoryOperator;
 use crate::database::content_folder::{ContentFolderOperator, PathBreadcrumb};
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
-use crate::extractors::user::User;
 use crate::state::flash_message::{OperationStatus, get_cookie};
-use crate::state::{AppState, AppStateContext, error::*};
+use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContentFolderForm {
@@ -44,7 +42,7 @@ pub struct ContentFolderShowTemplate {
 }
 
 pub async fn show(
-    app_state_context: AppStateContext,
+    context: AppStateContext,
     folder: FolderRequest,
     jar: CookieJar,
 ) -> Result<(CookieJar, ContentFolderShowTemplate), AppStateError> {
@@ -58,20 +56,19 @@ pub async fn show(
             sub_content_folders: folder.sub_folders,
             current_content_folder: folder.folder,
             category: folder.category,
-            state: app_state_context,
+            state: context,
             flash: operation_status,
         },
     ))
 }
 
 pub async fn create(
-    State(app_state): State<AppState>,
-    user: Option<User>,
+    context: AppStateContext,
     jar: CookieJar,
     Form(mut form): Form<ContentFolderForm>,
 ) -> Result<impl axum::response::IntoResponse, AppStateError> {
     // let app_state_context = app_state.context().await?;
-    let content_folder = ContentFolderOperator::new(app_state.clone(), user.clone());
+    let content_folder = ContentFolderOperator::new(context.state.clone(), context.user.clone());
 
     // build path with Parent folder path (or category path if parent is None) + folder.name
     let parent_path = if let Some(parent_id) = form.parent_id {
@@ -85,10 +82,11 @@ pub async fn create(
     };
 
     // Get folder category
-    let category: category::Model = CategoryOperator::new(app_state.clone(), user.clone())
-        .find_by_id(form.category_id)
-        .await
-        .context(CategorySnafu)?;
+    let category: category::Model =
+        CategoryOperator::new(context.state.clone(), context.user.clone())
+            .find_by_id(form.category_id)
+            .await
+            .context(CategorySnafu)?;
 
     // If name contains "/" returns an error
     if form.name.contains("/") {

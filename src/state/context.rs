@@ -11,6 +11,7 @@ use super::*;
 pub struct AppStateContext {
     pub errors: Vec<AppStateError>,
     pub free_space: FreeSpace,
+    pub state: AppState,
     pub user: Option<User>,
 }
 
@@ -24,6 +25,7 @@ impl FromRequestParts<AppState> for AppStateContext {
         Ok(Self {
             errors: vec![],
             free_space: state.free_space()?,
+            state: state.clone(),
             user: User::from_request_parts(parts, state).await?,
         })
     }
