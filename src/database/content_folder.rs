@@ -32,6 +32,8 @@ pub struct Model {
     pub parent_id: Option<i32>,
     #[sea_orm(self_ref, relation_enum = "Parent", from = "parent_id", to = "id")]
     pub parent: HasOne<Entity>,
+    #[sea_orm(has_many)]
+    pub magnets: HasMany<super::magnet::Entity>,
 }
 
 #[async_trait::async_trait]
@@ -46,6 +48,8 @@ pub enum ContentFolderError {
     PathTaken { path: String },
     #[snafu(display("The Content Folder (Path: {path}) does not exist"))]
     NotFound { path: String },
+    #[snafu(display("The content folder id is invalid: {id}"))]
+    IDInvalid { id: String },
     #[snafu(display("Database error"))]
     DB { source: sea_orm::DbErr },
     #[snafu(display("Failed to save the operation log"))]
@@ -116,6 +120,19 @@ impl ContentFolderOperator {
                 path: id.to_string(),
             }),
         }
+    }
+
+    /// Find one category by stringy ID
+    ///
+    /// Fails if:
+    ///
+    /// - the requested ID does not exist
+    /// - the requested ID could not be parsed
+    pub async fn find_by_id_str(&self, id: &str) -> Result<Model, ContentFolderError> {
+        let id: i32 = id
+            .parse()
+            .map_err(|_e| ContentFolderError::IDInvalid { id: id.to_string() })?;
+        self.find_by_id(id).await
     }
 
     /// Create a new content folder

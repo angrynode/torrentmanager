@@ -11,6 +11,7 @@ use crate::database::content_folder::PathBreadcrumb;
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
 use crate::filesystem::FileSystemEntry;
+use crate::routes::magnet::MagnetForm;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -37,6 +38,32 @@ pub struct ContentFolderShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
+    // TODO: WIP
+    pub error: Option<AppStateError>,
+}
+
+impl ContentFolderShowTemplate {
+    fn new(context: AppStateContext, folder: FolderRequest) -> Self {
+        Self {
+            breadcrumbs: folder.breadcrumbs,
+            children: folder.children,
+            current_content_folder: folder.folder,
+            category: folder.category,
+            state: context,
+            flash: None,
+            error: None,
+        }
+    }
+
+    fn with_flash(mut self, flash: Option<OperationStatus>) -> Self {
+        self.flash = flash;
+        self
+    }
+
+    fn with_errored_form(mut self, _form: MagnetForm, error: AppStateError) -> Self {
+        self.error = Some(error);
+        self
+    }
 }
 
 pub async fn show(
@@ -48,15 +75,28 @@ pub async fn show(
 
     Ok((
         jar,
-        ContentFolderShowTemplate {
-            breadcrumbs: folder.breadcrumbs,
-            children: folder.children,
-            current_content_folder: folder.folder,
-            category: folder.category,
-            state: context,
-            flash: operation_status,
-        },
+        ContentFolderShowTemplate::new(context, folder).with_flash(operation_status),
     ))
+}
+
+pub async fn post_magnet(
+    context: AppStateContext,
+    folder: FolderRequest,
+    Form(form): Form<MagnetForm>,
+) -> Result<Redirect, ContentFolderShowTemplate> {
+    // TODO: proper error type
+    if let Err(e) = context
+        .db
+        .magnet()
+        .create(&form)
+        .await
+        .context(MagnetUploadSnafu)
+    {
+        return Err(ContentFolderShowTemplate::new(context, folder).with_errored_form(form, e));
+    }
+
+    // TODO: what to do when upload is successful?
+    Ok(Redirect::to("/magnet"))
 }
 
 pub async fn create(

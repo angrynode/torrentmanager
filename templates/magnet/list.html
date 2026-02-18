@@ -11,12 +11,14 @@
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Content folder</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            {% for magnet in magnets %}
+            {% for (magnet, content_folder) in magnets %}
             <tr>
               <td class="is-left" align="left"><a href="/magnet/{{ magnet.id }}">{{ magnet.name }}</a></td>
+              <td><a href="/folders/{{ content_folder.category_id }}/{{ content_folder.id }}">{{ content_folder.path }}</a></td>
               <td>
                 {% if magnet.resolved %}
                   <!-- TODO: mettre le lien vers la page des d'import d'un torrent -->

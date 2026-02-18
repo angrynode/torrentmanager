@@ -4,7 +4,46 @@
   </button>
   <ul class="dropdown-menu">
     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#createSubFolder">Create a subfolder</a></li>
-    <li><a class="dropdown-item" href="/magnet/upload">Import magnet link</a></li>
-    <li><a class="dropdown-item" href="#">Import torrent file</a></li>
+    
+    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importMagnetLink" href="#">Import magnet link</a></li>
   </ul>
+</div>
+
+<div class="modal fade" id="importMagnetLink" tabindex="-1" aria-labelledby="importMagnetLink" aria-hidden="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">Import Magnet Link</h1>
+      </div>
+      <div class="modal-body">
+        <form method="POST" accept-charset="utf-8">
+          <div class="alert alert-info text-start">
+            <p>
+              You are about to import a magnet into the category <strong>{{ category.name }}</strong>, in the folder
+              <code class="ms-2"><span><small>{{ category.name }}{% if current_content_folder is defined %}{{current_content_folder.path }}{% endif %}/</small></span></code>.
+            </p>
+
+            <p>
+              You will be able to reorganize the torrent content later, once the magnet has been resolved.
+            </p>
+          </div>
+          <div class="row align-items-center">
+            <div class="col-md-12 text-center">
+              <img src="/assets/images/magnet.png" class="img-64">
+            </div>
+            <div class="col-md-12 mt-3">
+              {% if current_content_folder is defined %}
+                <input type="hidden" name="content_folder_id" value="{{ current_content_folder.id }}">
+              {% endif %}
+              <input type="text" name="magnet" class="form-control" placeholder="Magnet link to download" id="magnet">
+
+              <div class="text-center mt-4">
+                <input type="Submit" class="btn btn-success btn-lg" value="Add to resolving list">
+              </div>
+            </div>
+          </div>
+        </form>          
+      </div>
+    </div>
+  </div>
 </div>

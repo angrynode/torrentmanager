@@ -31,10 +31,12 @@ pub fn router(state: state::AppState) -> Router {
             get(routes::content_folder::show),
         )
         .route("/folders", get(routes::index::index))
+        .route(
+            "/folders/{category_name}/{*folder_path}",
+            post(routes::content_folder::post_magnet),
+        )
         .route("/folders", post(routes::content_folder::create))
         .route("/logs", get(routes::logs::index))
-        .route("/magnet/upload", post(routes::magnet::upload))
-        .route("/magnet/upload", get(routes::magnet::get_upload))
         .route("/magnet", get(routes::magnet::list))
         // Register static assets routes
         .nest("/assets", static_router())

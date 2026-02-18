@@ -4,6 +4,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
+use crate::database::content_folder;
 use crate::database::operation::*;
 use crate::database::{category, content_folder};
 use crate::extractors::user::User;
@@ -43,6 +44,10 @@ pub enum MagnetError {
     InvalidMagnet { source: MagnetLinkError },
     #[snafu(display("Database error"))]
     DB { source: sea_orm::DbErr },
+    #[snafu(display("Error with the requested content folder"))]
+    ContentFolder {
+        source: content_folder::ContentFolderError,
+    },
     #[snafu(display("The magnet (ID: {id}) does not exist"))]
     NotFound { id: i32 },
     #[snafu(display("The magnet (TorrentID: {id}) does not exist"))]
@@ -139,8 +144,22 @@ impl MagnetOperator {
     /// Fails if:
     ///
     /// - the magnet is invalid
+    /// - the requested content folder does not exist
     pub async fn create(&self, f: &MagnetForm) -> Result<Model, MagnetError> {
-        let magnet = MagnetLink::new(&f.magnet).context(InvalidMagnetSnafu)?;
+        let MagnetForm {
+            magnet,
+            content_folder_id,
+        } = f;
+
+        let magnet = MagnetLink::new(magnet).context(InvalidMagnetSnafu)?;
+
+        let content_folder = {
+            let operator = content_folder::ContentFolderOperator::new(self.state.clone(), None);
+            operator
+                .find_by_id_str(content_folder_id)
+                .await
+                .context(ContentFolderSnafu)?
+        };
 
         // Check duplicates
         let list = self.list().await?;
@@ -156,6 +175,7 @@ impl MagnetOperator {
             name: Set(magnet.name().to_string()),
             // TODO: check if we already have the torrent in which case it's already resolved!
             resolved: Set(false),
+            content_folder_id: Set(content_folder.id),
             ..Default::default()
         }
         .save(&self.state.database)
