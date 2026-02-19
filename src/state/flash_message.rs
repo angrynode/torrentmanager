@@ -1,6 +1,6 @@
 use axum_extra::extract::{CookieJar, cookie::Cookie};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct OperationStatus {
     /// Status of operation
     pub success: bool,

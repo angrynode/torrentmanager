@@ -4,11 +4,11 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
-use crate::database::content_folder;
 use crate::database::operation::*;
-use crate::database::{category, content_folder};
+use crate::database::{category, content_folder, operator::DatabaseOperator};
 use crate::extractors::user::User;
 use crate::routes::magnet::MagnetForm;
+use crate::routes::magnet::ValidatedMagnetForm;
 use crate::state::AppState;
 use crate::state::logger::LoggerError;
 
@@ -48,6 +48,8 @@ pub enum MagnetError {
     ContentFolder {
         source: content_folder::ContentFolderError,
     },
+    #[snafu(display("Error with the requested category"))]
+    Category { source: category::CategoryError },
     #[snafu(display("The magnet (ID: {id}) does not exist"))]
     NotFound { id: i32 },
     #[snafu(display("The magnet (TorrentID: {id}) does not exist"))]
@@ -63,6 +65,10 @@ pub struct MagnetOperator {
 }
 
 impl MagnetOperator {
+    pub fn db(&self) -> DatabaseOperator {
+        DatabaseOperator::new(self.state.clone(), self.user.clone())
+    }
+
     /// List magnets
     ///
     /// Should not fail, unless SQLite was corrupted for some reason.
@@ -145,21 +151,13 @@ impl MagnetOperator {
     ///
     /// - the magnet is invalid
     /// - the requested content folder does not exist
-    pub async fn create(&self, f: &MagnetForm) -> Result<Model, MagnetError> {
-        let MagnetForm {
+    pub async fn create(&self, form: MagnetForm) -> Result<Model, MagnetError> {
+        let validated_form = ValidatedMagnetForm::from_form(&form, &self.db()).await?;
+        let ValidatedMagnetForm {
             magnet,
-            content_folder_id,
-        } = f;
-
-        let magnet = MagnetLink::new(magnet).context(InvalidMagnetSnafu)?;
-
-        let content_folder = {
-            let operator = content_folder::ContentFolderOperator::new(self.state.clone(), None);
-            operator
-                .find_by_id_str(content_folder_id)
-                .await
-                .context(ContentFolderSnafu)?
-        };
+            category,
+            content_folder,
+        } = validated_form;
 
         // Check duplicates
         let list = self.list().await?;
@@ -169,21 +167,26 @@ impl MagnetOperator {
             return self.get_by_torrent_id(&magnet.id()).await;
         }
 
-        let model = ActiveModel {
+        let mut model = ActiveModel {
             torrent_id: Set(magnet.id()),
             link: Set(magnet.clone()),
             name: Set(magnet.name().to_string()),
             // TODO: check if we already have the torrent in which case it's already resolved!
             resolved: Set(false),
-            content_folder_id: Set(content_folder.id),
+            category_id: Set(category.id),
             ..Default::default()
-        }
-        .save(&self.state.database)
-        .await
-        .context(DBSnafu)?;
+        };
 
-        // Should not fail
-        let model = model.try_into_model().unwrap();
+        if let Some(content_folder) = content_folder {
+            model.content_folder_id = Set(content_folder.id);
+        }
+
+        let model = model
+            .save(&self.state.database)
+            .await
+            .context(DBSnafu)?
+            .try_into_model()
+            .unwrap();
 
         let operation_log = OperationLog {
             user: self.user.clone(),
@@ -194,7 +197,7 @@ impl MagnetOperator {
                 object_id: model.id.to_owned(),
                 name: model.name.to_string(),
             },
-            operation_form: Some(Operation::Magnet(f.clone())),
+            operation_form: Some(Operation::Magnet(form)),
         };
 
         self.state

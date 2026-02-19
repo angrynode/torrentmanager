@@ -1,11 +1,12 @@
 use askama::Template;
 use askama_web::WebTemplate;
+use hightorrent_api::hightorrent::MagnetLink;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use sea_orm::LoaderTrait;
 
-use crate::database::{content_folder, magnet};
+use crate::database::{category, content_folder, magnet, operator::DatabaseOperator};
 use crate::state::{AppStateContext, error::*};
 
 /// Multipart form submitted to /magnet/upload:
@@ -13,8 +14,53 @@ use crate::state::{AppStateContext, error::*};
 /// - magnet: the magnet link to upload
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MagnetForm {
+    pub category_id: String,
     pub content_folder_id: String,
     pub magnet: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ValidatedMagnetForm {
+    pub category: category::Model,
+    pub content_folder: Option<content_folder::Model>,
+    pub magnet: MagnetLink,
+}
+
+impl ValidatedMagnetForm {
+    pub async fn from_form(
+        f: &MagnetForm,
+        db: &DatabaseOperator,
+    ) -> Result<Self, magnet::MagnetError> {
+        let MagnetForm {
+            category_id,
+            content_folder_id,
+            magnet,
+        } = f;
+
+        let magnet = MagnetLink::new(magnet).context(magnet::InvalidMagnetSnafu)?;
+        let category = db
+            .category()
+            .find_by_id_str(category_id)
+            .await
+            .context(magnet::CategorySnafu)?;
+
+        let content_folder = if content_folder_id.is_empty() {
+            None
+        } else {
+            Some(
+                db.content_folder()
+                    .find_by_id_str(content_folder_id)
+                    .await
+                    .context(magnet::ContentFolderSnafu)?,
+            )
+        };
+
+        Ok(Self {
+            category,
+            content_folder,
+            magnet,
+        })
+    }
 }
 
 #[derive(Template, WebTemplate)]

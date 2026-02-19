@@ -84,15 +84,16 @@ pub async fn post_magnet(
     folder: FolderRequest,
     Form(form): Form<MagnetForm>,
 ) -> Result<Redirect, ContentFolderShowTemplate> {
-    // TODO: proper error type
+    let template = ContentFolderShowTemplate::new(context.partial_clone(), folder);
+
     if let Err(e) = context
         .db
         .magnet()
-        .create(&form)
+        .create(form.clone())
         .await
         .context(MagnetUploadSnafu)
     {
-        return Err(ContentFolderShowTemplate::new(context, folder).with_errored_form(form, e));
+        return Err(template.with_errored_form(form, e));
     }
 
     // TODO: what to do when upload is successful?

@@ -28,6 +28,7 @@ pub enum FreeSpaceError {
 /// Remaining space on a partition.
 ///
 /// Uses (vendored) uu_df from uutils under the hood.
+#[derive(Clone, Debug)]
 pub struct FreeSpace {
     /// Number of remaining GiB.
     pub free_space_gib: u64,
