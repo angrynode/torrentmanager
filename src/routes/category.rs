@@ -5,13 +5,10 @@ use axum::extract::Path;
 use axum::response::{IntoResponse, Redirect};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
-use snafu::prelude::*;
 
-use crate::database::category;
 use crate::database::category::CategoryError;
-use crate::database::content_folder;
 use crate::extractors::normalized_path::*;
-use crate::state::flash_message::{OperationStatus, get_cookie};
+use crate::state::flash_message::OperationStatus;
 use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -92,48 +89,4 @@ pub async fn create(
             Ok((jar, Redirect::to("/").into_response()))
         }
     }
-}
-
-#[derive(Template, WebTemplate)]
-#[template(path = "categories/show.html")]
-pub struct CategoryShowTemplate {
-    /// Global application state
-    pub state: AppStateContext,
-    /// Categories found in database
-    pub content_folders: Vec<content_folder::Model>,
-    /// Category
-    category: category::Model,
-    /// Operation status for UI confirmation (Cookie)
-    pub flash: Option<OperationStatus>,
-}
-
-pub async fn show(
-    context: AppStateContext,
-    Path(category_name): Path<String>,
-    jar: CookieJar,
-) -> Result<impl IntoResponse, AppStateError> {
-    let categories = context.db.category();
-
-    let category = categories
-        .find_by_name(category_name.to_string())
-        .await
-        .context(CategorySnafu)?;
-
-    // get all content folders in this category
-    let content_folders = categories
-        .list_folders(category.id)
-        .await
-        .context(CategorySnafu)?;
-
-    let (jar, operation_status) = get_cookie(jar);
-
-    Ok((
-        jar,
-        CategoryShowTemplate {
-            content_folders,
-            category,
-            state: context,
-            flash: operation_status,
-        },
-    ))
 }

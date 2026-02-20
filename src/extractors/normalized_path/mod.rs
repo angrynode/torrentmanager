@@ -163,6 +163,13 @@ mod tests {
     }
 
     #[test]
+    fn test_relative_path_multi_slash() {
+        let s = "foo/bar//baz";
+        let p = NormalizedPathRelative::from_str(s).unwrap();
+        assert_eq!(p.as_str(), "foo/bar/baz");
+    }
+
+    #[test]
     fn test_relative_path_absolute() {
         let s = "/foo/bar/baz";
         let p = NormalizedPathRelative::from_str(s).unwrap_err();
@@ -302,4 +309,12 @@ mod tests {
         let p: Result<NormalizedPathComponent, _> = serde_json::from_str(s);
         assert!(p.is_err());
     }
+
+    // // TODO: what should this do?
+    // #[test]
+    // fn test_empty_path() {
+    //     let s = "//";
+    //     let p = NormalizedPathAbsolute::from_str(s).unwrap();
+    //     assert_eq!(p.as_str(), "");
+    // }
 }

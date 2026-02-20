@@ -118,6 +118,8 @@ impl CategoryOperator {
             Some(category) => {
                 let folders = category
                     .find_related(content_folder::Entity)
+                    // We only want the top-level folders
+                    .filter(content_folder::Column::ParentId.is_null())
                     .all(&self.state.database)
                     .await
                     .context(DBSnafu)?;
