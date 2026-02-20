@@ -15,7 +15,7 @@ use crate::state::{AppStateContext, error::*};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MagnetForm {
     pub category_id: String,
-    pub content_folder_id: String,
+    pub content_folder_id: Option<String>,
     pub magnet: String,
 }
 
@@ -44,15 +44,19 @@ impl ValidatedMagnetForm {
             .await
             .context(magnet::CategorySnafu)?;
 
-        let content_folder = if content_folder_id.is_empty() {
-            None
+        let content_folder = if let Some(content_folder_id) = content_folder_id {
+            if content_folder_id.is_empty() {
+                None
+            } else {
+                Some(
+                    db.content_folder()
+                        .find_by_id_str(content_folder_id)
+                        .await
+                        .context(magnet::ContentFolderSnafu)?,
+                )
+            }
         } else {
-            Some(
-                db.content_folder()
-                    .find_by_id_str(content_folder_id)
-                    .await
-                    .context(magnet::ContentFolderSnafu)?,
-            )
+            None
         };
 
         Ok(Self {

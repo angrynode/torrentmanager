@@ -26,7 +26,7 @@ pub struct Model {
     pub link: MagnetLink,
     pub name: String,
     pub resolved: bool,
-    pub content_folder_id: i32,
+    pub content_folder_id: Option<i32>,
     #[sea_orm(belongs_to, from = "content_folder_id", to = "id")]
     pub content_folder: HasOne<content_folder::Entity>,
     pub category_id: i32,
@@ -178,7 +178,7 @@ impl MagnetOperator {
         };
 
         if let Some(content_folder) = content_folder {
-            model.content_folder_id = Set(content_folder.id);
+            model.content_folder_id = Set(Some(content_folder.id));
         }
 
         let model = model

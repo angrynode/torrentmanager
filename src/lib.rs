@@ -27,6 +27,10 @@ pub fn router(state: state::AppState) -> Router {
         .route("/categories/{id}/delete", get(routes::category::delete))
         .route("/folders/{category_id}", get(routes::category::show))
         .route(
+            "/folders/{category_id}",
+            post(routes::category::post_magnet),
+        )
+        .route(
             "/folders/{category_name}/{*folder_path}",
             get(routes::content_folder::show),
         )

@@ -9,8 +9,10 @@ use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryError};
 use crate::database::content_folder::PathBreadcrumb;
+use crate::extractors::category_request::CategoryRequest;
 use crate::extractors::normalized_path::*;
 use crate::filesystem::FileSystemEntry;
+use crate::routes::magnet::MagnetForm;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -105,40 +107,68 @@ pub struct CategoryShowTemplate {
     pub flash: Option<OperationStatus>,
     /// Breadcrumbs navigation
     pub breadcrumbs: Vec<PathBreadcrumb>,
+    pub error: Option<AppStateError>,
+}
+
+impl CategoryShowTemplate {
+    pub fn new(context: AppStateContext, category: CategoryRequest) -> Self {
+        let CategoryRequest {
+            category,
+            children,
+            breadcrumbs,
+        } = category;
+
+        Self {
+            state: context,
+            children,
+            breadcrumbs,
+            category,
+            flash: None,
+            error: None,
+        }
+    }
+
+    fn with_flash(mut self, flash: Option<OperationStatus>) -> Self {
+        self.flash = flash;
+        self
+    }
+
+    fn with_errored_form(mut self, _form: MagnetForm, error: AppStateError) -> Self {
+        self.error = Some(error);
+        self
+    }
 }
 
 pub async fn show(
     context: AppStateContext,
-    Path(category_name): Path<String>,
+    category: CategoryRequest,
     jar: CookieJar,
-) -> Result<impl IntoResponse, AppStateError> {
-    let categories = context.db.category();
-
-    let category = categories
-        .find_by_name(category_name.to_string())
-        .await
-        .context(CategorySnafu)?;
-
-    // get all content folders in this category
-    let content_folders = categories
-        .list_folders(category.id)
-        .await
-        .context(CategorySnafu)?;
-
-    let children = FileSystemEntry::from_content_folders(&category, &content_folders);
-
+) -> (CookieJar, CategoryShowTemplate) {
     let (jar, operation_status) = get_cookie(jar);
 
-    let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
-
-    Ok((
+    (
         jar,
-        CategoryShowTemplate {
-            category,
-            children,
-            state: context,
-            flash: operation_status,
-            breadcrumbs,
-        },
-    ))
+        CategoryShowTemplate::new(context, category).with_flash(operation_status),
+    )
+}
+
+pub async fn post_magnet(
+    context: AppStateContext,
+    category: CategoryRequest,
+    Form(form): Form<MagnetForm>,
+) -> Result<Redirect, CategoryShowTemplate> {
+    let template = CategoryShowTemplate::new(context.partial_clone(), category);
+
+    if let Err(e) = context
+        .db
+        .magnet()
+        .create(form.clone())
+        .await
+        .context(MagnetUploadSnafu)
+    {
+        return Err(template.with_errored_form(form, e));
+    }
+
+    // TODO: what to do when upload is successful?
+    Ok(Redirect::to("/magnet"))
 }
