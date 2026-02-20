@@ -1,6 +1,7 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use hightorrent_api::hightorrent::MagnetLink;
+use itertools::multizip;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
@@ -73,7 +74,11 @@ pub struct MagnetListTemplate {
     /// Global application state (errors/warnings)
     pub state: AppStateContext,
     /// Magnets stored in database
-    pub magnets: Vec<(magnet::Model, content_folder::Model)>,
+    pub magnets: Vec<(
+        magnet::Model,
+        category::Model,
+        Option<content_folder::Model>,
+    )>,
 }
 
 pub async fn list(context: AppStateContext) -> Result<MagnetListTemplate, AppStateError> {
@@ -86,18 +91,20 @@ pub async fn list(context: AppStateContext) -> Result<MagnetListTemplate, AppSta
         .context(OtherSnafu)?;
 
     // In the creation form we guarantee to set the content_folder so we can unwrap
-    let content_folders: Vec<content_folder::Model> = magnets
+    let content_folders: Vec<Option<content_folder::Model>> = magnets
         .load_one(content_folder::Entity, &context.state.database)
+        .await
+        .context(SqliteSnafu)?;
+
+    let categories: Vec<category::Model> = magnets
+        .load_one(category::Entity, &context.state.database)
         .await
         .context(SqliteSnafu)?
         .into_iter()
         .map(|x| x.unwrap())
         .collect();
 
-    let magnets = magnets
-        .into_iter()
-        .zip(content_folders.into_iter())
-        .collect();
+    let magnets = multizip((magnets, categories, content_folders)).collect();
 
     Ok(MagnetListTemplate {
         state: context,

@@ -3820,6 +3820,7 @@ dependencies = [
  "derive_more",
  "env_logger",
  "hightorrent_api",
+ "itertools",
  "log",
  "sea-orm",
  "sea-orm-migration",
