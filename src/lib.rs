@@ -1,7 +1,6 @@
 use axum::Router;
 use axum::routing::{get, post};
 use axum::serve::Listener;
-use static_serve::embed_assets;
 
 pub mod config;
 pub mod database;
@@ -14,9 +13,6 @@ pub mod state;
 use state::error::AppStateError;
 
 pub fn router(state: state::AppState) -> Router {
-    // Embed the assets in the binary, generating the static_router function
-    embed_assets!("assets", allow_unknown_extensions = true);
-
     Router::new()
         // Register dynamic routes
         .route("/", get(routes::index::index))
@@ -33,7 +29,7 @@ pub fn router(state: state::AppState) -> Router {
         .route("/folders", post(routes::content_folder::create))
         .route("/logs", get(routes::logs::index))
         // Register static assets routes
-        .nest("/assets", static_router())
+        .nest("/assets", torrentmanager_assets::static_router())
         // Insert request timing
         .layer(axum::middleware::from_fn(middleware::timing::add_timing))
         // Allow to access global AppState from routes

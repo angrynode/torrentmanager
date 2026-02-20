@@ -1,0 +1,12 @@
+[package]
+name = "torrentmanager_assets"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "torrentmanager_assets"
+path = "src/lib.rs"
+
+[dependencies]
+axum = { workspace = true }
+static-serve = { git = "https://github.com/M4SS-Code/static-serve" }
