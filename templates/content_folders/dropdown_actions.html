@@ -33,6 +33,7 @@
             </div>
             <div class="col-md-12 mt-3">
               {% if current_content_folder is defined %}
+                <input type="hidden" name="category_id" value="{{ current_content_folder.category_id }}">
                 <input type="hidden" name="content_folder_id" value="{{ current_content_folder.id }}">
               {% endif %}
               <input type="text" name="magnet" class="form-control" placeholder="Magnet link to download" id="magnet">

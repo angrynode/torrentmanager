@@ -29,7 +29,7 @@ pub struct ContentFolderShowTemplate {
     /// Global application state
     pub state: AppStateContext,
     /// current folder
-    pub current_content_folder: content_folder::Model,
+    pub folder: content_folder::Model,
     /// Folders with parent_id set to current folder
     pub children: Vec<FileSystemEntry>,
     /// Category
@@ -43,12 +43,19 @@ pub struct ContentFolderShowTemplate {
 }
 
 impl ContentFolderShowTemplate {
-    fn new(context: AppStateContext, folder: FolderRequest) -> Self {
+    pub fn new(context: AppStateContext, folder: FolderRequest) -> Self {
+        let FolderRequest {
+            children,
+            folder,
+            category,
+            breadcrumbs,
+        } = folder;
+
         Self {
-            breadcrumbs: folder.breadcrumbs,
-            children: folder.children,
-            current_content_folder: folder.folder,
-            category: folder.category,
+            breadcrumbs,
+            children,
+            folder,
+            category,
             state: context,
             flash: None,
             error: None,

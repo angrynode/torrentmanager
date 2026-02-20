@@ -1,8 +1,20 @@
 {% extends "layouts/file_system_base.html" %}
 
 {% block folder_title %}
-  {{ current_content_folder.name }}
+  {{ folder.name }}
 {% endblock%}
+
+{% block alert_message %}
+  {% include "shared/alert_operation_status.html" %}
+  {% if let Some(error) = error %}
+  <div class="alert alert-danger mt-4">
+    <p class="mb-0">{{ error }}</p>
+    {% for inner_error in error.inner_errors() %}
+    <p>→ {{ inner_error }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endblock %}
 
 {% block actions_buttons %}
   {% include "content_folders/dropdown_actions.html" %}
@@ -22,7 +34,7 @@
     </div> 
 
     <input type="hidden" id="category_id" name="category_id" value="{{ category.id }}" />
-    <input type="hidden" id="parent_id" name="parent_id" value="{{ current_content_folder.id }}" />
+    <input type="hidden" id="parent_id" name="parent_id" value="{{ folder.id }}" />
     <input type="hidden" id="path" name="path" value="fake_path" />
 
     <div class="text-center mt-4">
