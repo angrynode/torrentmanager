@@ -9,9 +9,9 @@ use snafu::prelude::*;
 
 use crate::database::category;
 use crate::database::category::CategoryError;
-use crate::database::content_folder;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::normalized_path::*;
+use crate::filesystem::FileSystemEntry;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -101,7 +101,7 @@ pub struct CategoryShowTemplate {
     /// Global application state
     pub state: AppStateContext,
     /// Categories found in database
-    pub content_folders: Vec<content_folder::Model>,
+    pub children: Vec<FileSystemEntry>,
     /// Category
     category: category::Model,
     /// Operation status for UI confirmation (Cookie)
@@ -128,6 +128,8 @@ pub async fn show(
         .await
         .context(CategorySnafu)?;
 
+    let children = FileSystemEntry::from_content_folders(&category, &content_folders);
+
     let (jar, operation_status) = get_cookie(jar);
 
     let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
@@ -135,8 +137,8 @@ pub async fn show(
     Ok((
         jar,
         CategoryShowTemplate {
-            content_folders,
             category,
+            children,
             state: context,
             flash: operation_status,
             breadcrumbs,

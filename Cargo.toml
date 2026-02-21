@@ -12,9 +12,9 @@ name = "torrentmanager"
 path = "src/main.rs"
 
 [dependencies]
-askama = "0.14.0"
+askama = "0.15"
 # askama_web::WebTemplate implements axum::IntoResponse
-askama_web = { version = "0.14.6", features = ["axum-0.8"] }
+askama_web = { version = "0.15", features = ["axum-0.8"] }
 axum = { version = "0.8.4", features = ["macros"] }
 axum-extra = { version = "0.12.1", features = ["cookie"] }
 # UTF-8 paths for easier String/PathBuf interop
