@@ -55,7 +55,34 @@
           </div>
 
           <ul class="list-group">
-            {% block system_list %}{% endblock system_list %}
+            {% block system_list %}
+            {% if children.is_empty() %}
+              {% include "shared/empty_state.html" %}
+            {% endif %}
+
+            {% for child in children %}
+            <li class="list-group-item py-3">
+              <a class="d-block text-decoration-none" href="/folders/{{ child.folder_path }}">
+                <div class="row">
+                  {# TODO: col-9 was col-md-9 on content_folder/category. Is that relevant? #}
+                  <div class="col-9">
+                    <div class="d-flex align-items-center">
+                      <i class="fa fa-folder text-info me-3"></i>
+                      <h5 class="mb-0">
+                        {{ child.name }} {% if let Some(extra) = child.extra %}<code class="ms-2"span><small>{{ extra }}</small></code>{% endif %}
+                      </h5>
+                    </div>
+                  </div>
+                  <div class="col-3">
+                    <p class="mb-0 fst-italic text-end">
+                      <i class="fa fa-chevron-right"></i>
+                    </p>
+                  </div>
+                </div>
+              </a>
+            </li>
+            {% endfor %}
+            {% endblock system_list %}
           </ul>
         </div>
       </div>

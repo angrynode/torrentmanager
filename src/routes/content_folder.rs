@@ -10,6 +10,7 @@ use snafu::prelude::*;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
+use crate::filesystem::FileSystemEntry;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -29,7 +30,7 @@ pub struct ContentFolderShowTemplate {
     /// current folder
     pub current_content_folder: content_folder::Model,
     /// Folders with parent_id set to current folder
-    pub sub_content_folders: Vec<content_folder::Model>,
+    pub children: Vec<FileSystemEntry>,
     /// Category
     pub category: category::Model,
     /// BreadCrumb extract from path
@@ -49,7 +50,7 @@ pub async fn show(
         jar,
         ContentFolderShowTemplate {
             breadcrumbs: folder.breadcrumbs,
-            sub_content_folders: folder.sub_folders,
+            children: folder.children,
             current_content_folder: folder.folder,
             category: folder.category,
             state: context,

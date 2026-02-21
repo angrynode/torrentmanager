@@ -9,27 +9,7 @@
 {% endblock actions_buttons %}
 
 {% block system_list %}
-  {% for category in categories %}
-    <li class="list-group-item py-3">
-      <a class="d-block text-decoration-none" href="/folders/{{ category.name }}">
-        <div class="row">
-          <div class="col-9">
-            <div class="d-flex align-items-center">
-              <i class="fa fa-folder text-info me-3"></i>
-              <h5 class="mb-0">
-                {{ category.name }} <code class="ms-2"span><small>{{ category.path }}</small></code>
-              </h5>
-            </div>
-          </div>
-          <div class="col-3">
-            <p class="mb-0 fst-italic text-end">
-              <i class="fa fa-chevron-right"></i>
-            </p>
-          </div>
-        </div>
-      </a>
-    </li>
-  {% endfor %}
+  {{ super() }}
 
   <div class="modal fade" id="createCategory" tabindex="-1" aria-labelledby="createCategoryLabel" aria-hidden="false">
     <div class="modal-dialog">
