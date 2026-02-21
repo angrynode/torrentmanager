@@ -6,6 +6,7 @@ use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryError, CategoryOperator};
 use crate::database::operation::{Operation, OperationId, OperationLog, OperationType, Table};
+use crate::database::operator::DatabaseOperator;
 use crate::extractors::user::User;
 use crate::routes::content_folder::ContentFolderForm;
 use crate::state::AppState;
@@ -62,6 +63,13 @@ pub struct ContentFolderOperator {
 impl ContentFolderOperator {
     pub fn new(state: AppState, user: Option<User>) -> Self {
         Self { state, user }
+    }
+
+    pub fn db(&self) -> DatabaseOperator {
+        DatabaseOperator {
+            state: self.state.clone(),
+            user: self.user.clone(),
+        }
     }
 
     /// list All child folders for 1 folder
