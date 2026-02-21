@@ -8,13 +8,41 @@ use crate::extractors::filesystem::FileSystemView;
 use crate::state::AppStateContext;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 
+#[derive(Clone, Debug)]
+pub struct FileSystemEntry {
+    pub name: String,
+    pub extra: Option<String>,
+    pub folder_path: String,
+}
+
+impl FileSystemEntry {
+    pub fn from_category(category: &category::Model) -> Self {
+        Self {
+            name: category.name.to_string(),
+            extra: Some(category.path.to_string()),
+            folder_path: category.name.to_string(),
+        }
+    }
+
+    pub fn from_content_folder(
+        category: &category::Model,
+        content_folder: &content_folder::Model,
+    ) -> Self {
+        Self {
+            name: content_folder.name.to_string(),
+            extra: None,
+            folder_path: format!("{}{}", category.name, content_folder.path),
+        }
+    }
+}
+
 #[derive(Template, WebTemplate)]
 #[template(path = "filesystem/show.html")]
 pub struct FileSystemTemplate {
     pub state: AppStateContext,
     pub category: category::Model,
     pub folder: Option<content_folder::Model>,
-    pub children: Vec<content_folder::Model>,
+    pub children: Vec<FileSystemEntry>,
     pub ancestors: Vec<PathBreadcrumb>,
     pub flash: Option<OperationStatus>,
 }

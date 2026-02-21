@@ -8,6 +8,7 @@ use std::str::FromStr;
 use crate::database::category::{self, CategoryOperator};
 use crate::database::content_folder::{self, ContentFolderOperator, PathBreadcrumb};
 use crate::extractors::normalized_path::NormalizedPathRelative;
+use crate::routes::filesystem::FileSystemEntry;
 use crate::state::AppState;
 use crate::state::error::*;
 
@@ -15,19 +16,9 @@ use crate::state::error::*;
 pub struct FileSystemView {
     pub category: category::Model,
     pub folder: Option<content_folder::Model>,
-    pub children: Vec<content_folder::Model>,
+    pub children: Vec<FileSystemEntry>,
     pub ancestors: Vec<PathBreadcrumb>,
 }
-
-// impl FileSystemView {
-//     pub fn name(&self) -> String {
-//         if let Some(folder) = &self.folder {
-//             folder.name.to_string()
-//         } else {
-//             category.name.to_string()
-//         }
-//     }
-// }
 
 impl FromRequestParts<AppState> for FileSystemView {
     type Rejection = AppStateError;
@@ -72,7 +63,13 @@ impl FromRequestParts<AppState> for FileSystemView {
                 .list_folders(category.id)
                 .await
                 .context(CategorySnafu)?;
-            (None, category_children)
+            (
+                None,
+                category_children
+                    .into_iter()
+                    .map(|x| FileSystemEntry::from_content_folder(&category, &x))
+                    .collect(),
+            )
         } else {
             let content_folder = content_folder_operator
                 // TODO: why do we have absolute paths in the DB???
@@ -86,7 +83,13 @@ impl FromRequestParts<AppState> for FileSystemView {
                 .await
                 .context(ContentFolderSnafu)?;
 
-            (Some(content_folder), content_folder_children)
+            (
+                Some(content_folder),
+                content_folder_children
+                    .into_iter()
+                    .map(|x| FileSystemEntry::from_content_folder(&category, &x))
+                    .collect(),
+            )
         };
 
         let ancestors = PathBreadcrumb::for_filesystem_path(&path);
