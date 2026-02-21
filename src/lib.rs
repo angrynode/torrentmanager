@@ -6,6 +6,7 @@ use static_serve::embed_assets;
 pub mod config;
 pub mod database;
 pub mod extractors;
+pub mod filesystem;
 pub mod middleware;
 pub mod migration;
 pub mod routes;

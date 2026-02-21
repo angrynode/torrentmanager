@@ -4,6 +4,7 @@ use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryOperator};
 use crate::database::content_folder::{self, ContentFolderOperator, PathBreadcrumb};
+use crate::filesystem::FileSystemEntry;
 use crate::state::AppState;
 use crate::state::error::*;
 
@@ -11,7 +12,7 @@ use crate::state::error::*;
 pub struct FolderRequest {
     pub category: category::Model,
     pub folder: content_folder::Model,
-    pub sub_folders: Vec<content_folder::Model>,
+    pub children: Vec<FileSystemEntry>,
     pub breadcrumbs: Vec<PathBreadcrumb>,
 }
 
@@ -52,6 +53,8 @@ impl FromRequestParts<AppState> for FolderRequest {
             .await
             .context(CategorySnafu)?;
 
+        let children = FileSystemEntry::from_content_folders(&category, &sub_content_folders);
+
         let breadcrumbs = PathBreadcrumb::for_filesystem_path(&format!(
             "{}{}",
             category.name, current_content_folder.path
@@ -60,7 +63,7 @@ impl FromRequestParts<AppState> for FolderRequest {
         Ok(Self {
             category,
             folder: current_content_folder,
-            sub_folders: sub_content_folders,
+            children,
             breadcrumbs,
         })
     }

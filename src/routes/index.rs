@@ -4,7 +4,7 @@ use axum_extra::extract::CookieJar;
 use snafu::prelude::*;
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
-use crate::database::category;
+use crate::filesystem::FileSystemEntry;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
 
@@ -14,7 +14,7 @@ pub struct IndexTemplate {
     /// Global application state (errors/warnings)
     pub state: AppStateContext,
     /// Categories
-    pub categories: Vec<category::Model>,
+    pub children: Vec<FileSystemEntry>,
     /// Operation status for UI confirmation
     pub flash: Option<OperationStatus>,
 }
@@ -34,6 +34,7 @@ impl IndexTemplate {
         jar: CookieJar,
     ) -> Result<(CookieJar, Self), AppStateError> {
         let categories = context.db.category().list().await.context(CategorySnafu)?;
+        let children = FileSystemEntry::from_categories(&categories);
 
         let (jar, operation_status) = get_cookie(jar);
 
@@ -41,8 +42,8 @@ impl IndexTemplate {
             jar,
             IndexTemplate {
                 state: context,
-                categories,
                 flash: operation_status,
+                children,
             },
         ))
     }
