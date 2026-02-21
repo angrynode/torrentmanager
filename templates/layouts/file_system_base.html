@@ -4,7 +4,9 @@
   <div class="container">
     <h1>File System</h1>
 
-    {% block alert_message %}{% endblock alert_message %}
+    {% block alert_message %}
+    {% include "shared/alert_operation_status.html" %}
+    {% endblock alert_message %}
 
     {% if state.free_space.free_space_percent < 5 %}
       <div class="alert alert-warning  mt-4">

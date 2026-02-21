@@ -4,10 +4,6 @@
   {{ current_content_folder.name }}
 {% endblock%}
 
-{% block alert_message %}
-  {% include "shared/alert_operation_status.html" %}
-{% endblock %}
-
 {% block system_list %}
   {% if sub_content_folders.is_empty() %}
     {% include "shared/empty_state.html" %}
