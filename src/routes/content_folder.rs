@@ -33,9 +33,7 @@ pub struct ContentFolderShowTemplate {
     /// Category
     pub category: category::Model,
     /// BreadCrumb extract from path
-    pub breadcrumb_items: Vec<PathBreadcrumb>,
-    /// Parent Folder if exist. If None, the parent is category
-    pub parent_folder: Option<content_folder::Model>,
+    pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
 }
@@ -50,8 +48,7 @@ pub async fn show(
     Ok((
         jar,
         ContentFolderShowTemplate {
-            parent_folder: folder.parent,
-            breadcrumb_items: folder.ancestors,
+            breadcrumbs: folder.breadcrumbs,
             sub_content_folders: folder.sub_folders,
             current_content_folder: folder.folder,
             category: folder.category,

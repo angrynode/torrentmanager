@@ -30,6 +30,7 @@ pub fn router(state: state::AppState) -> Router {
             "/folders/{category_name}/{*folder_path}",
             get(routes::content_folder::show),
         )
+        .route("/folders", get(routes::index::index))
         .route("/folders", post(routes::content_folder::create))
         .route("/logs", get(routes::logs::index))
         // Register static assets routes

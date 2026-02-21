@@ -12,8 +12,7 @@ pub struct FolderRequest {
     pub category: category::Model,
     pub folder: content_folder::Model,
     pub sub_folders: Vec<content_folder::Model>,
-    pub ancestors: Vec<PathBreadcrumb>,
-    pub parent: Option<content_folder::Model>,
+    pub breadcrumbs: Vec<PathBreadcrumb>,
 }
 
 impl FromRequestParts<AppState> for FolderRequest {
@@ -53,17 +52,16 @@ impl FromRequestParts<AppState> for FolderRequest {
             .await
             .context(CategorySnafu)?;
 
-        let ancestors = content_folder_operator
-            .ancestors(&current_content_folder)
-            .await
-            .context(ContentFolderSnafu)?;
+        let breadcrumbs = PathBreadcrumb::for_filesystem_path(&format!(
+            "{}{}",
+            category.name, current_content_folder.path
+        ));
 
         Ok(Self {
             category,
             folder: current_content_folder,
             sub_folders: sub_content_folders,
-            ancestors: ancestors.breadcrumbs,
-            parent: ancestors.parent,
+            breadcrumbs,
         })
     }
 }

@@ -1,53 +1,12 @@
 {% extends "layouts/file_system_base.html" %}
 
-{% block breadcrumb %}
-  <li class="breadcrumb-item">
-    <a href="/">
-      Categories
-    </a>
-  </li>
-
-  <li class="breadcrumb-item">
-    <a href="/folders/{{ category.name }}">
-      {{ category.name }}
-    </a>
-  </li>
-
-  {% for i in (0..breadcrumb_items.len()) %}
-    {% let breadcrumb_item = breadcrumb_items[i] %}
-
-    <li class="breadcrumb-item">
-      {% if i + 1 == breadcrumb_items.len() %}
-        <strong>{{ breadcrumb_item.name }}</strong>
-      {% else %}
-      <a href="/folders/{{category.name}}{{ breadcrumb_item.path }}">
-          {{ breadcrumb_item.name }}
-        </a>
-      {% endif %}
-    </li>
-  {% endfor %}
-{% endblock %}
-
 {% block folder_title %}
   {{ current_content_folder.name }}
 {% endblock%}
 
-{% block additional_buttons %}
-  {% if let Some(p) = parent_folder %}
-  <a class="btn btn-dark" href="/folders/{{category.name}}{{ p.path }}">
-      Go up
-    </a>
-  {% else %}
-    <a class="btn btn-dark" href="/folders/{{ category.name }}">
-      Go up
-    </a>
-  {% endif %}
-{% endblock %}
-
 {% block alert_message %}
   {% include "shared/alert_operation_status.html" %}
 {% endblock %}
-
 
 {% block system_list %}
   {% if sub_content_folders.is_empty() %}
@@ -76,7 +35,6 @@
     </li>
   {% endfor %}
 {% endblock %} 
-
 
 {% block actions_buttons %}
   {% include "content_folders/dropdown_actions.html" %}

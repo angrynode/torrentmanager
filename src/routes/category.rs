@@ -10,6 +10,7 @@ use snafu::prelude::*;
 use crate::database::category;
 use crate::database::category::CategoryError;
 use crate::database::content_folder;
+use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::normalized_path::*;
 use crate::state::flash_message::{OperationStatus, get_cookie};
 use crate::state::{AppStateContext, error::*};
@@ -105,6 +106,8 @@ pub struct CategoryShowTemplate {
     category: category::Model,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
+    /// Breadcrumbs navigation
+    pub breadcrumbs: Vec<PathBreadcrumb>,
 }
 
 pub async fn show(
@@ -127,6 +130,8 @@ pub async fn show(
 
     let (jar, operation_status) = get_cookie(jar);
 
+    let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
+
     Ok((
         jar,
         CategoryShowTemplate {
@@ -134,6 +139,7 @@ pub async fn show(
             category,
             state: context,
             flash: operation_status,
+            breadcrumbs,
         },
     ))
 }
