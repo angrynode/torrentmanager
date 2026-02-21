@@ -4,6 +4,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
+use crate::database::operator::DatabaseOperator;
 use crate::database::{content_folder, operation::*};
 use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
@@ -62,6 +63,13 @@ pub struct CategoryOperator {
 impl CategoryOperator {
     pub fn new(state: AppState, user: Option<User>) -> Self {
         Self { state, user }
+    }
+
+    pub fn db(&self) -> DatabaseOperator {
+        DatabaseOperator {
+            state: self.state.clone(),
+            user: self.user.clone(),
+        }
     }
 
     /// List categories
