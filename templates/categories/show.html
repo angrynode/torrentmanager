@@ -1,28 +1,8 @@
 {% extends "layouts/file_system_base.html" %}
 
-{% block breadcrumb %}
-  <li class="breadcrumb-item">
-    <a href="/">
-      Categories
-    </a>
-  </li>
-
-  <li class="breadcrumb-item">
-    <a href="/folders/{{ category.name }}">
-      {{ category.name }}
-    </a>
-  </li>
-{% endblock %}
-
 {% block folder_title %}
   {{ category.name }}
 {% endblock%}
-
-{% block additional_buttons %}
-  <a class="btn btn-dark" href="/">
-    Go up
-  </a>
-{% endblock %}
 
 {% block system_list %}
   {% if content_folders.is_empty() %}

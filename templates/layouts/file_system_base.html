@@ -16,7 +16,21 @@
       <div class="col-md-10">
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0">
-            {% block breadcrumb %}{% endblock breadcrumb %}
+              <li class="breadcrumb-item">
+                <a href="/">
+                  Categories
+                </a>
+              </li>
+
+              {% if breadcrumbs is defined %}
+              {% for ancestor in breadcrumbs %}
+              <li class="breadcrumb-item">
+                {% if loop.last %}<strong>{{ ancestor.name }}</strong>
+                {% else %}<a href="/folders/{{ ancestor.path }}">{{ ancestor.name }}</a>
+                {% endif %}
+              </li>
+              {% endfor %}
+              {% endif %}
           </ol>
         </nav>
       </div>
@@ -30,7 +44,12 @@
       <div class="card-body">
         <div class="p-4">
           <div class="d-flex align-items-center mb-4">
-            <h4 class="mb-0">{% block folder_title %}{% endblock folder_title %}</h4> <div class="ms-4">{% block additional_buttons %}{% endblock additional_buttons %}</div>
+            <h4 class="mb-0">{% block folder_title %}{% endblock folder_title %}</h4>
+            <div class="ms-4">
+              {% if breadcrumbs is defined %}
+              <a class="btn btn-dark" href="/folders{% if let Some(parent) = breadcrumbs.iter().rev().collect::<Vec<_>>().get(1) %}/{{ parent.path }}{% endif %}">Go up</a>
+              {% endif %}
+            </div>
           </div>
 
           <ul class="list-group">
