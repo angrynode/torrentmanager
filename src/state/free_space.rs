@@ -9,6 +9,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use snafu::prelude::*;
 use uucore::fsext::{FsUsage, read_fs_list, statfs};
 
+use std::ffi::OsString;
+
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum FreeSpaceError {
@@ -61,11 +63,11 @@ impl FreeSpace {
             })
             .unwrap();
         let stat_path = if mount_info.mount_dir.is_empty() {
-            mount_info.dev_name.clone()
+            OsString::from(mount_info.dev_name.clone())
         } else {
             mount_info.mount_dir.clone()
         };
-        let usage = FsUsage::new(statfs(stat_path).map_err(|e| FreeSpaceError::Partition {
+        let usage = FsUsage::new(statfs(&stat_path).map_err(|e| FreeSpaceError::Partition {
             reason: e.to_string(),
         })?);
 

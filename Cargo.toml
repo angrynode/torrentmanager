@@ -15,7 +15,7 @@ path = "src/main.rs"
 askama = "0.15"
 # askama_web::WebTemplate implements axum::IntoResponse
 askama_web = { version = "0.15", features = ["axum-0.8"] }
-axum = { version = "0.8.4", features = ["macros"] }
+axum = { version = "0.8.8", features = ["macros"] }
 axum-extra = { version = "0.12.1", features = ["cookie"] }
 # UTF-8 paths for easier String/PathBuf interop
 camino = { version = "1.1.12", features = ["serde1"] }
@@ -65,9 +65,9 @@ tokio = { version = "1.47.1", features = ["fs", "rt", "sync", "time"] }
 #   boxed_variant/mpsc_listener: IO mocking in tests
 tokio-listener = { version = "0.5.1", features = ["axum08", "clap", "boxed_variant", "mpsc_listener", "serde"] }
 # Configuration file parsing
-toml = { version = "0.9.5", features = ["preserve_order"] }
+toml = { version = "1", features = ["preserve_order"] }
 # Dependency for free-space calculation
-uucore = { version = "0.1.0", features = ["fsext"] }
+uucore = { version = "0.6.0", features = ["fsext"] }
 # Finding XDG standard directories (such as ~/.config/torrentmanager/config.toml)
 xdg = "3.0.0"
 
