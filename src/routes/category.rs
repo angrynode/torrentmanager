@@ -2,17 +2,17 @@ use askama::Template;
 use askama_web::WebTemplate;
 use axum::Form;
 use axum::extract::Path;
-use axum::response::{IntoResponse, Redirect};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use crate::database::category;
-use crate::database::category::CategoryError;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::normalized_path::*;
 use crate::filesystem::FileSystemEntry;
-use crate::state::flash_message::{OperationStatus, get_cookie};
+use crate::state::flash_message::{
+    FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
+};
 use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -26,73 +26,50 @@ pub struct CategoryForm {
 pub struct NewCategoryTemplate {
     /// Global application state
     pub state: AppStateContext,
-    /// Error
-    pub error: Option<CategoryError>,
     /// Default form with value
     pub category_form: Option<CategoryForm>,
 }
 
-pub async fn new(
-    app_state_context: AppStateContext,
-) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    Ok(NewCategoryTemplate {
+pub async fn new(app_state_context: AppStateContext) -> NewCategoryTemplate {
+    NewCategoryTemplate {
         state: app_state_context,
         category_form: None,
-        error: None,
-    })
+    }
 }
 
 pub async fn delete(
     context: AppStateContext,
     Path(id): Path<i32>,
     jar: CookieJar,
-) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    let operation_status = match context.db.category().delete(id).await {
-        Ok(name) => OperationStatus {
-            success: true,
-            message: format!("The category {} has been successfully deleted", name),
-        },
-        Err(error) => OperationStatus {
-            success: false,
-            message: format!("{}", error),
-        },
+) -> FlashRedirect {
+    let status = match context.db.category().delete(id).await {
+        Ok(name) => StatusCookie::success(
+            jar,
+            format!("The category {} has been successfully deleted", name),
+        ),
+        Err(error) => StatusCookie::error(jar, error.to_string()),
     };
 
-    let jar = operation_status.set_cookie(jar);
-
-    Ok((jar, Redirect::to("/categories")))
+    status.redirect("/categories")
 }
 
 pub async fn create(
     context: AppStateContext,
     jar: CookieJar,
     Form(form): Form<CategoryForm>,
-) -> Result<impl axum::response::IntoResponse, AppStateError> {
-    match context.db.category().create(&form).await {
-        Ok(created) => {
-            let operation_status = OperationStatus {
-                success: true,
-                message: format!(
-                    "The category {} has been successfully created (ID {})",
-                    created.name, created.id
-                ),
-            };
+) -> FlashRedirect {
+    let status = match context.db.category().create(&form).await {
+        Ok(created) => StatusCookie::success(
+            jar,
+            format!(
+                "The category {} has been successfully created (ID {})",
+                created.name, created.id
+            ),
+        ),
+        Err(error) => StatusCookie::error(jar, error.to_string()),
+    };
 
-            let jar = operation_status.set_cookie(jar);
-
-            Ok((jar, Redirect::to("/").into_response()))
-        }
-        Err(error) => {
-            let operation_status = OperationStatus {
-                success: false,
-                message: format!("{}", error),
-            };
-
-            let jar = operation_status.set_cookie(jar);
-
-            Ok((jar, Redirect::to("/").into_response()))
-        }
-    }
+    status.redirect("/")
 }
 
 #[derive(Template, WebTemplate)]
@@ -110,11 +87,17 @@ pub struct CategoryShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
 }
 
+impl FallibleTemplate for CategoryShowTemplate {
+    fn with_optional_flash(&mut self, flash: Option<OperationStatus>) {
+        self.flash = flash;
+    }
+}
+
 pub async fn show(
     context: AppStateContext,
     Path(category_name): Path<String>,
-    jar: CookieJar,
-) -> Result<impl IntoResponse, AppStateError> {
+    status: StatusCookie,
+) -> Result<FlashTemplate<CategoryShowTemplate>, AppStateError> {
     let categories = context.db.category();
 
     let category = categories
@@ -130,18 +113,13 @@ pub async fn show(
 
     let children = FileSystemEntry::from_content_folders(&category, &content_folders);
 
-    let (jar, operation_status) = get_cookie(jar);
-
     let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
 
-    Ok((
-        jar,
-        CategoryShowTemplate {
-            category,
-            children,
-            state: context,
-            flash: operation_status,
-            breadcrumbs,
-        },
-    ))
+    Ok(status.with_template(CategoryShowTemplate {
+        category,
+        children,
+        state: context,
+        flash: None,
+        breadcrumbs,
+    }))
 }

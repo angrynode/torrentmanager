@@ -1,11 +1,10 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum_extra::extract::CookieJar;
 use snafu::prelude::*;
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
 use crate::filesystem::FileSystemEntry;
-use crate::state::flash_message::{OperationStatus, get_cookie};
+use crate::state::flash_message::{FallibleTemplate, FlashTemplate, OperationStatus, StatusCookie};
 use crate::state::{AppStateContext, error::*};
 
 #[derive(Template, WebTemplate)]
@@ -17,6 +16,12 @@ pub struct IndexTemplate {
     pub children: Vec<FileSystemEntry>,
     /// Operation status for UI confirmation
     pub flash: Option<OperationStatus>,
+}
+
+impl FallibleTemplate for IndexTemplate {
+    fn with_optional_flash(&mut self, flash: Option<OperationStatus>) {
+        self.flash = flash;
+    }
 }
 
 #[derive(Template, WebTemplate)]
@@ -31,21 +36,16 @@ pub struct UploadTemplate {
 impl IndexTemplate {
     pub async fn new(
         context: AppStateContext,
-        jar: CookieJar,
-    ) -> Result<(CookieJar, Self), AppStateError> {
+        status: StatusCookie,
+    ) -> Result<FlashTemplate<Self>, AppStateError> {
         let categories = context.db.category().list().await.context(CategorySnafu)?;
         let children = FileSystemEntry::from_categories(&categories);
 
-        let (jar, operation_status) = get_cookie(jar);
-
-        Ok((
-            jar,
-            IndexTemplate {
-                state: context,
-                flash: operation_status,
-                children,
-            },
-        ))
+        Ok(status.with_template(IndexTemplate {
+            state: context,
+            flash: None,
+            children,
+        }))
     }
 }
 
@@ -70,9 +70,9 @@ impl UploadTemplate {
 
 pub async fn index(
     context: AppStateContext,
-    jar: CookieJar,
-) -> Result<(CookieJar, IndexTemplate), AppStateError> {
-    IndexTemplate::new(context, jar).await
+    status: StatusCookie,
+) -> Result<FlashTemplate<IndexTemplate>, AppStateError> {
+    IndexTemplate::new(context, status).await
 }
 
 pub async fn upload(context: AppStateContext) -> Result<UploadTemplate, AppStateError> {
