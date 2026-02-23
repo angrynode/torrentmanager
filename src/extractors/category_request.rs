@@ -8,6 +8,28 @@ use crate::filesystem::FileSystemEntry;
 use crate::state::{AppState, error::*};
 
 #[derive(Clone, Debug)]
+pub struct CategoriesRequest {
+    pub children: Vec<FileSystemEntry>,
+}
+
+impl FromRequestParts<AppState> for CategoriesRequest {
+    type Rejection = AppStateError;
+
+    async fn from_request_parts(
+        _parts: &mut Parts,
+        app_state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let categories = CategoryOperator::new(app_state.clone(), None)
+            .list()
+            .await
+            .context(CategorySnafu)?;
+
+        let children = FileSystemEntry::from_categories(&categories);
+        Ok(Self { children })
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct CategoryRequest {
     pub category: category::Model,
     pub breadcrumbs: Vec<PathBreadcrumb>,

@@ -28,8 +28,14 @@ pub struct Model {
     pub id: i32,
     pub name: String,
     #[sea_orm(unique)]
-    // TODO: maybe we'd like relative paths in fact? Why did
-    // we have a leading slash in the first place?
+    // TODO: Here the path is absolute, even though it's technically
+    // relative to the parent folder/category. This is because we want
+    // to make it easy to look up by path.
+    //
+    // This means if we ever implement moving/renaming folders/categories,
+    // we'll need to recursively change all dependent paths.
+    //
+    // Maybe we'd like to revisit this design decision at some point.
     pub path: NormalizedPathAbsolute,
     pub category_id: i32,
     #[sea_orm(belongs_to, from = "category_id", to = "id")]
@@ -206,6 +212,8 @@ impl ContentFolderOperator {
         let real_path =
             NormalizedPathAbsolute::from_str(&format!("{}{}", category.path, inner_path)).unwrap();
 
+        // TODO: we may want to remove the entry from the DB when creating the folder
+        // on disk fails.
         tokio::fs::create_dir_all(&real_path)
             .await
             .context(IOSnafu)?;
