@@ -76,6 +76,11 @@ impl OperationStatus {
             message: MessageOrError::Message(message),
         }
     }
+
+    pub fn with_template<T: FallibleTemplate>(self, mut template: T) -> T {
+        template.with_optional_flash(Some(self));
+        template
+    }
 }
 
 /// An operation status passed as a cookie.

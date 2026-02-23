@@ -3,16 +3,15 @@ use askama_web::WebTemplate;
 use axum::Form;
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
-use snafu::prelude::*;
 
 use crate::database::content_folder::PathBreadcrumb;
 use crate::database::{category, content_folder};
 use crate::extractors::folder_request::FolderRequest;
 use crate::filesystem::FileSystemEntry;
+use crate::state::AppStateContext;
 use crate::state::flash_message::{
     FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
 };
-use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContentFolderForm {
@@ -72,19 +71,12 @@ pub async fn show(
     status.with_template(ContentFolderShowTemplate::new(context, folder))
 }
 
-// TODO: currently an error takes us back to /
-pub async fn create(
+pub async fn create_subfolder(
     context: AppStateContext,
     jar: CookieJar,
+    folder: FolderRequest,
     Form(form): Form<ContentFolderForm>,
-) -> Result<FlashRedirect, AppStateError> {
-    let category = context
-        .db
-        .category()
-        .find_by_id(form.category_id)
-        .await
-        .context(CategorySnafu)?;
-
+) -> Result<FlashRedirect, ContentFolderShowTemplate> {
     match context.db.content_folder().create(&form).await {
         Ok(created) => {
             let status = StatusCookie::success(
@@ -95,23 +87,12 @@ pub async fn create(
                 ),
             );
 
-            let uri = format!("/folders/{}{}", category.name, created.path);
+            let uri = format!("/folders/{}{}", folder.category.name, created.path);
             Ok(status.redirect(&uri))
         }
         Err(error) => {
-            let status = StatusCookie::error(jar, error.to_string());
-            let uri = if let Some(parent_id) = form.parent_id {
-                let parent = context
-                    .db
-                    .content_folder()
-                    .find_by_id(parent_id)
-                    .await
-                    .context(ContentFolderSnafu)?;
-                format!("/folders/{}{}", category.name, parent.path)
-            } else {
-                format!("/folders{}", category.name)
-            };
-            Ok(status.redirect(&uri))
+            let status = OperationStatus::error(error);
+            Err(status.with_template(ContentFolderShowTemplate::new(context, folder)))
         }
     }
 }
