@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::category_request::CategoryRequest;
-use crate::extractors::normalized_path::*;
 use crate::filesystem::FileSystemEntry;
 use crate::state::AppStateContext;
 use crate::state::flash_message::{
@@ -17,8 +16,8 @@ use crate::state::flash_message::{
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CategoryForm {
-    pub name: NormalizedPathComponent,
-    pub path: NormalizedPathAbsolute,
+    pub name: String,
+    pub path: String,
 }
 
 #[derive(Template, WebTemplate)]
