@@ -1,8 +1,9 @@
-use camino::Utf8PathBuf;
 use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
+
+use std::str::FromStr;
 
 use crate::database::operator::DatabaseOperator;
 use crate::database::{content_folder, operation::*};
@@ -38,8 +39,12 @@ impl ActiveModelBehavior for ActiveModel {}
 pub enum CategoryError {
     #[snafu(display("There is already a category called `{name}`"))]
     NameTaken { name: String },
+    #[snafu(display("The category name is invalid. It must not contain slashes."))]
+    NameInvalid,
     #[snafu(display("There is already a category in dir `{path}`"))]
     PathTaken { path: String },
+    #[snafu(display("The category path is invalid. It must be an absolute path."))]
+    PathInvalid,
     #[snafu(display("The parent directory does not exist: {path}"))]
     ParentDir { path: String },
     #[snafu(display("Other disk error"))]
@@ -194,8 +199,13 @@ impl CategoryOperator {
     ///
     /// - name or path is already taken (they should be unique)
     /// - path parent directory does not exist (to avoid completely wrong paths)
-    pub async fn create(&self, f: &CategoryForm) -> Result<Model, CategoryError> {
-        let dir = Utf8PathBuf::from(&f.path);
+    pub async fn create(&self, form: &CategoryForm) -> Result<Model, CategoryError> {
+        let name = NormalizedPathComponent::from_str(&form.name)
+            .map_err(|_e| CategoryError::NameInvalid)?;
+        let path = NormalizedPathAbsolute::from_str(&form.path)
+            .map_err(|_e| CategoryError::PathInvalid)?;
+
+        let dir = path.to_path_buf();
         let parent = dir.parent().unwrap();
 
         if !tokio::fs::try_exists(parent).await.context(IOSnafu)? {
@@ -207,20 +217,20 @@ impl CategoryOperator {
         // Check duplicates
         let list = self.list().await?;
 
-        if list.iter().any(|x| x.name == f.name) {
+        if list.iter().any(|x| x.name == name) {
             return Err(CategoryError::NameTaken {
-                name: f.name.to_string(),
+                name: name.to_string(),
             });
         }
-        if list.iter().any(|x| x.path == f.path) {
+        if list.iter().any(|x| x.path == path) {
             return Err(CategoryError::PathTaken {
-                path: f.path.to_string(),
+                path: path.to_string(),
             });
         }
 
         let model = ActiveModel {
-            name: Set(f.name.clone()),
-            path: Set(f.path.clone()),
+            name: Set(name.clone()),
+            path: Set(path.clone()),
             ..Default::default()
         }
         .save(&self.state.database)
@@ -237,9 +247,9 @@ impl CategoryOperator {
             operation: OperationType::Create,
             operation_id: OperationId {
                 object_id: model.id.to_owned(),
-                name: f.name.to_string(),
+                name: name.to_string(),
             },
-            operation_form: Some(Operation::Category(f.clone())),
+            operation_form: Some(Operation::Category(form.clone())),
         };
 
         self.state
