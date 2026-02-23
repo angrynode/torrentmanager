@@ -7,9 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
-use crate::extractors::category_request::CategoryRequest;
+use crate::extractors::category_request::{CategoriesRequest, CategoryRequest};
 use crate::filesystem::FileSystemEntry;
 use crate::routes::content_folder::ContentFolderForm;
+use crate::routes::index::IndexTemplate;
 use crate::state::AppStateContext;
 use crate::state::flash_message::{
     FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
@@ -55,21 +56,27 @@ pub async fn delete(
 
 pub async fn create(
     context: AppStateContext,
+    categories: CategoriesRequest,
     jar: CookieJar,
     Form(form): Form<CategoryForm>,
-) -> FlashRedirect {
-    let status = match context.db.category().create(&form).await {
-        Ok(created) => StatusCookie::success(
-            jar,
-            format!(
-                "The category {} has been successfully created (ID {})",
-                created.name, created.id
-            ),
-        ),
-        Err(error) => StatusCookie::error(jar, error.to_string()),
-    };
-
-    status.redirect("/")
+) -> Result<FlashRedirect, IndexTemplate> {
+    match context.db.category().create(&form).await {
+        Ok(created) => {
+            let status = StatusCookie::success(
+                jar,
+                format!(
+                    "The category {} has been successfully created (ID {})",
+                    created.name, created.id
+                ),
+            );
+            let uri = format!("/folders/{}", created.name);
+            Ok(status.redirect(&uri))
+        }
+        Err(error) => {
+            let status = OperationStatus::error(error);
+            Err(status.with_template(IndexTemplate::new(context, categories)))
+        }
+    }
 }
 
 #[derive(Template, WebTemplate)]

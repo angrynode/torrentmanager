@@ -1,11 +1,11 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use snafu::prelude::*;
 
 // TUTORIAL: https://github.com/SeaQL/sea-orm/blob/master/examples/axum_example/
+use crate::extractors::category_request::CategoriesRequest;
 use crate::filesystem::FileSystemEntry;
-use crate::state::flash_message::{FallibleTemplate, FlashTemplate, OperationStatus, StatusCookie};
-use crate::state::{AppStateContext, error::*};
+use crate::state::AppStateContext;
+use crate::state::flash_message::{FallibleTemplate, OperationStatus};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "index.html")]
@@ -25,22 +25,15 @@ impl FallibleTemplate for IndexTemplate {
 }
 
 impl IndexTemplate {
-    pub async fn new(context: AppStateContext) -> Result<Self, AppStateError> {
-        let categories = context.db.category().list().await.context(CategorySnafu)?;
-        let children = FileSystemEntry::from_categories(&categories);
-
-        Ok(Self {
+    pub fn new(context: AppStateContext, categories: CategoriesRequest) -> Self {
+        Self {
             state: context,
             flash: None,
-            children,
-        })
+            children: categories.children,
+        }
     }
 }
 
-pub async fn index(
-    context: AppStateContext,
-    status: StatusCookie,
-) -> Result<FlashTemplate<IndexTemplate>, AppStateError> {
-    let template = IndexTemplate::new(context).await?;
-    Ok(status.with_template(template))
+pub async fn index(context: AppStateContext, categories: CategoriesRequest) -> IndexTemplate {
+    IndexTemplate::new(context, categories)
 }
