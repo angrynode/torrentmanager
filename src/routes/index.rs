@@ -25,18 +25,15 @@ impl FallibleTemplate for IndexTemplate {
 }
 
 impl IndexTemplate {
-    pub async fn new(
-        context: AppStateContext,
-        status: StatusCookie,
-    ) -> Result<FlashTemplate<Self>, AppStateError> {
+    pub async fn new(context: AppStateContext) -> Result<Self, AppStateError> {
         let categories = context.db.category().list().await.context(CategorySnafu)?;
         let children = FileSystemEntry::from_categories(&categories);
 
-        Ok(status.with_template(IndexTemplate {
+        Ok(Self {
             state: context,
             flash: None,
             children,
-        }))
+        })
     }
 }
 
@@ -44,5 +41,6 @@ pub async fn index(
     context: AppStateContext,
     status: StatusCookie,
 ) -> Result<FlashTemplate<IndexTemplate>, AppStateError> {
-    IndexTemplate::new(context, status).await
+    let template = IndexTemplate::new(context).await?;
+    Ok(status.with_template(template))
 }
