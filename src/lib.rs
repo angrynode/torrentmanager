@@ -21,7 +21,6 @@ pub fn router(state: state::AppState) -> Router {
     Router::new()
         // Register dynamic routes
         .route("/", get(routes::index::index))
-        .route("/upload", get(routes::index::upload))
         .route("/progress/{view_request}", get(routes::progress::progress))
         .route("/categories", post(routes::category::create))
         .route("/categories/new", get(routes::category::new))
