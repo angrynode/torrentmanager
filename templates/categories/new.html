@@ -9,12 +9,6 @@
 
     <div class="card mt-4">
       <div class="card-body">
-        {% if let Some(error) = error %}
-          <div class="alert alert-danger mb-4">
-            <p class="mb-0">{{ error }}</p>
-          </div>
-        {% endif %}
-
         {% include "categories/form.html" %}
       </div>
     </div>
