@@ -1,9 +1,7 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::Form;
-use axum::response::Redirect;
 use axum_extra::extract::CookieJar;
-use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
@@ -20,7 +18,6 @@ use crate::state::{AppStateContext, error::*};
 pub struct ContentFolderForm {
     pub name: String,
     pub parent_id: Option<i32>,
-    pub path: String,
     pub category_id: i32,
 }
 
@@ -75,56 +72,21 @@ pub async fn show(
     status.with_template(ContentFolderShowTemplate::new(context, folder))
 }
 
+// TODO: currently an error takes us back to /
 pub async fn create(
     context: AppStateContext,
     jar: CookieJar,
-    Form(mut form): Form<ContentFolderForm>,
+    Form(form): Form<ContentFolderForm>,
 ) -> Result<FlashRedirect, AppStateError> {
-    let categories = context.db.category();
-    let content_folders = context.db.content_folder();
-
-    // build path with Parent folder path (or category path if parent is None) + folder.name
-    let parent_path = if let Some(parent_id) = form.parent_id {
-        let parent_folder = content_folders
-            .find_by_id(parent_id)
-            .await
-            .context(ContentFolderSnafu)?;
-        Utf8PathBuf::from(parent_folder.path)
-    } else {
-        Utf8PathBuf::new()
-    };
-
-    // Get folder category
-    let category: category::Model = categories
+    let category = context
+        .db
+        .category()
         .find_by_id(form.category_id)
         .await
         .context(CategorySnafu)?;
 
-    // If name contains "/" returns an error
-    if form.name.contains("/") {
-        let status = StatusCookie::error(
-            jar,
-            format!(
-                "Failed to create Folder, {} is not valid (it contains '/')",
-                form.name
-            ),
-        );
-
-        let uri = format!("/folders/{}{}", category.name, parent_path.into_string());
-        return Ok(status.redirect(&uri));
-    }
-
-    // build final path with parent_path and path of form
-    form.path = format!("{}/{}", parent_path, form.name);
-
-    let created = content_folders.create(&form).await;
-
-    match created {
+    match context.db.content_folder().create(&form).await {
         Ok(created) => {
-            tokio::fs::create_dir_all(format!("{}/{}", category.path, created.path.clone()))
-                .await
-                .context(IOSnafu)?;
-
             let status = StatusCookie::success(
                 jar,
                 format!(
@@ -136,7 +98,20 @@ pub async fn create(
             let uri = format!("/folders/{}{}", category.name, created.path);
             Ok(status.redirect(&uri))
         }
-        // TODO: why don't we produce an error here?
-        Err(_error) => Ok((jar, Redirect::to("/"))),
+        Err(error) => {
+            let status = StatusCookie::error(jar, error.to_string());
+            let uri = if let Some(parent_id) = form.parent_id {
+                let parent = context
+                    .db
+                    .content_folder()
+                    .find_by_id(parent_id)
+                    .await
+                    .context(ContentFolderSnafu)?;
+                format!("/folders/{}{}", category.name, parent.path)
+            } else {
+                format!("/folders{}", category.name)
+            };
+            Ok(status.redirect(&uri))
+        }
     }
 }

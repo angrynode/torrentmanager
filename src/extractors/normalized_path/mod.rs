@@ -22,7 +22,7 @@ pub use relative::*;
 /// - disallows parent dir traversal (`..`)
 /// - has no trailing slash
 /// - may contain current dir `./` but these will be discarded
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, Hash, DeriveValueType)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, Hash, DeriveValueType)]
 #[sea_orm(value_type = "String")]
 #[serde(into = "String", try_from = "String")]
 pub struct NormalizedPath {

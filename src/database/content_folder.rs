@@ -4,9 +4,12 @@ use sea_orm::entity::prelude::*;
 use sea_orm::*;
 use snafu::prelude::*;
 
-use crate::database::category::{self, CategoryError, CategoryOperator};
+use std::str::FromStr;
+
+use crate::database::category::{self, CategoryError};
 use crate::database::operation::{Operation, OperationId, OperationLog, OperationType, Table};
 use crate::database::operator::DatabaseOperator;
+use crate::extractors::normalized_path::{NormalizedPathAbsolute, NormalizedPathComponent};
 use crate::extractors::user::User;
 use crate::routes::content_folder::ContentFolderForm;
 use crate::state::AppState;
@@ -25,7 +28,9 @@ pub struct Model {
     pub id: i32,
     pub name: String,
     #[sea_orm(unique)]
-    pub path: String,
+    // TODO: maybe we'd like relative paths in fact? Why did
+    // we have a leading slash in the first place?
+    pub path: NormalizedPathAbsolute,
     pub category_id: i32,
     #[sea_orm(belongs_to, from = "category_id", to = "id")]
     pub category: HasOne<category::Entity>,
@@ -40,10 +45,12 @@ impl ActiveModelBehavior for ActiveModel {}
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum ContentFolderError {
-    #[snafu(display("There is already a content folder called `{name}`"))]
+    #[snafu(display("There is already a content folder called `{name}` in the current folder."))]
     NameTaken { name: String },
-    #[snafu(display("There is already a content folder in dir `{path}`"))]
-    PathTaken { path: String },
+    #[snafu(display("The folder name is invalid. It must not contain slashes."))]
+    NameInvalid,
+    #[snafu(display("The folder path must appear absolute"))]
+    PathInvalid,
     #[snafu(display("The Content Folder (Path: {path}) does not exist"))]
     NotFound { path: String },
     #[snafu(display("Database error"))]
@@ -52,6 +59,8 @@ pub enum ContentFolderError {
     Logger { source: LoggerError },
     #[snafu(display("Category operation failed"))]
     Category { source: CategoryError },
+    #[snafu(display("Failed to create the folder on disk"))]
+    IO { source: std::io::Error },
 }
 
 #[derive(Clone, Debug)]
@@ -90,6 +99,9 @@ impl ContentFolderOperator {
     ///
     /// Should not fail, unless SQLite was corrupted for some reason.
     pub async fn find_by_path(&self, path: String) -> Result<Model, ContentFolderError> {
+        let path = NormalizedPathAbsolute::from_str(&path)
+            .map_err(|_e| ContentFolderError::PathInvalid)?;
+
         let content_folder = Entity::find_by_path(path.clone())
             .one(&self.state.database)
             .await
@@ -97,7 +109,9 @@ impl ContentFolderOperator {
 
         match content_folder {
             Some(category) => Ok(category),
-            None => Err(ContentFolderError::NotFound { path }),
+            None => Err(ContentFolderError::NotFound {
+                path: path.to_string(),
+            }),
         }
     }
 
@@ -122,35 +136,48 @@ impl ContentFolderOperator {
     ///
     /// Fails if:
     ///
-    /// - name or path is already taken (they should be unique in one folder)
+    /// - name is already taken (they should be unique in one folder)
     /// - path parent directory does not exist (to avoid completely wrong paths)
     pub async fn create(&self, f: &ContentFolderForm) -> Result<Model, ContentFolderError> {
-        // Check duplicates in same folder
-        let list = if let Some(parent_id) = f.parent_id {
-            self.list_child_folders(parent_id).await?
+        let name = NormalizedPathComponent::from_str(&f.name)
+            .map_err(|_e| ContentFolderError::NameInvalid)?;
+
+        let category = self
+            .db()
+            .category()
+            .find_by_id(f.category_id)
+            .await
+            .context(CategorySnafu)?;
+
+        // Check duplicates in same category/folder
+        {
+            let siblings = if let Some(parent_id) = f.parent_id {
+                self.list_child_folders(parent_id).await?
+            } else {
+                self.db()
+                    .category()
+                    .list_folders(f.category_id)
+                    .await
+                    .context(CategorySnafu)?
+            };
+            if siblings.iter().any(|x| x.name == f.name) {
+                return Err(ContentFolderError::NameTaken {
+                    name: f.name.clone(),
+                });
+            }
+        }
+
+        // This path is an absolute path, but relative to a category path
+        let inner_path = if let Some(parent_id) = f.parent_id {
+            let parent = self.find_by_id(parent_id).await?;
+            NormalizedPathAbsolute::from_str(&format!("{}/{}", parent.path, name,)).unwrap()
         } else {
-            let category = CategoryOperator::new(self.state.clone(), None);
-            category
-                .list_folders(f.category_id)
-                .await
-                .context(CategorySnafu)?
+            NormalizedPathAbsolute::from_str(&format!("/{}", name)).unwrap()
         };
 
-        if list.iter().any(|x| x.name == f.name) {
-            return Err(ContentFolderError::NameTaken {
-                name: f.name.clone(),
-            });
-        }
-
-        if list.iter().any(|x| x.path == f.path) {
-            return Err(ContentFolderError::PathTaken {
-                path: f.path.clone(),
-            });
-        }
-
         let model = ActiveModel {
-            name: Set(f.name.clone()),
-            path: Set(f.path.clone()),
+            name: Set(name.to_string()),
+            path: Set(inner_path.clone()),
             category_id: Set(f.category_id),
             parent_id: Set(f.parent_id),
             ..Default::default()
@@ -158,6 +185,13 @@ impl ContentFolderOperator {
         .save(&self.state.database)
         .await
         .context(DBSnafu)?;
+
+        let real_path =
+            NormalizedPathAbsolute::from_str(&format!("{}{}", category.path, inner_path)).unwrap();
+
+        tokio::fs::create_dir_all(&real_path)
+            .await
+            .context(IOSnafu)?;
 
         // Should not fail
         let model = model.try_into_model().unwrap();
