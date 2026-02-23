@@ -4,16 +4,16 @@ use axum::Form;
 use axum::extract::Path;
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
-use snafu::prelude::*;
 
 use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
+use crate::extractors::category_request::CategoryRequest;
 use crate::extractors::normalized_path::*;
 use crate::filesystem::FileSystemEntry;
+use crate::state::AppStateContext;
 use crate::state::flash_message::{
     FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
 };
-use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CategoryForm {
@@ -87,6 +87,24 @@ pub struct CategoryShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
 }
 
+impl CategoryShowTemplate {
+    fn new(context: AppStateContext, category: CategoryRequest) -> Self {
+        let CategoryRequest {
+            breadcrumbs,
+            category,
+            children,
+        } = category;
+
+        Self {
+            breadcrumbs,
+            category,
+            children,
+            flash: None,
+            state: context,
+        }
+    }
+}
+
 impl FallibleTemplate for CategoryShowTemplate {
     fn with_optional_flash(&mut self, flash: Option<OperationStatus>) {
         self.flash = flash;
@@ -95,31 +113,8 @@ impl FallibleTemplate for CategoryShowTemplate {
 
 pub async fn show(
     context: AppStateContext,
-    Path(category_name): Path<String>,
+    category: CategoryRequest,
     status: StatusCookie,
-) -> Result<FlashTemplate<CategoryShowTemplate>, AppStateError> {
-    let categories = context.db.category();
-
-    let category = categories
-        .find_by_name(category_name.to_string())
-        .await
-        .context(CategorySnafu)?;
-
-    // get all content folders in this category
-    let content_folders = categories
-        .list_folders(category.id)
-        .await
-        .context(CategorySnafu)?;
-
-    let children = FileSystemEntry::from_content_folders(&category, &content_folders);
-
-    let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
-
-    Ok(status.with_template(CategoryShowTemplate {
-        category,
-        children,
-        state: context,
-        flash: None,
-        breadcrumbs,
-    }))
+) -> FlashTemplate<CategoryShowTemplate> {
+    status.with_template(CategoryShowTemplate::new(context, category))
 }
