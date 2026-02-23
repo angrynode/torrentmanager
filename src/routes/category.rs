@@ -9,6 +9,7 @@ use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::extractors::category_request::CategoryRequest;
 use crate::filesystem::FileSystemEntry;
+use crate::routes::content_folder::ContentFolderForm;
 use crate::state::AppStateContext;
 use crate::state::flash_message::{
     FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
@@ -116,4 +117,30 @@ pub async fn show(
     status: StatusCookie,
 ) -> FlashTemplate<CategoryShowTemplate> {
     status.with_template(CategoryShowTemplate::new(context, category))
+}
+
+pub async fn create_folder(
+    context: AppStateContext,
+    jar: CookieJar,
+    category: CategoryRequest,
+    Form(form): Form<ContentFolderForm>,
+) -> Result<FlashRedirect, CategoryShowTemplate> {
+    match context.db.content_folder().create(&form).await {
+        Ok(created) => {
+            let status = StatusCookie::success(
+                jar,
+                format!(
+                    "The folder {} has been successfully created (ID: {})",
+                    created.name, created.id
+                ),
+            );
+
+            let uri = format!("/folders/{}{}", category.category.name, created.path);
+            Ok(status.redirect(&uri))
+        }
+        Err(error) => {
+            let status = OperationStatus::error(error);
+            Err(status.with_template(CategoryShowTemplate::new(context, category)))
+        }
+    }
 }
