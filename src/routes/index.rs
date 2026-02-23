@@ -24,15 +24,6 @@ impl FallibleTemplate for IndexTemplate {
     }
 }
 
-#[derive(Template, WebTemplate)]
-#[template(path = "upload.html")]
-pub struct UploadTemplate {
-    /// Global application state (errors/warnings)
-    pub state: AppStateContext,
-    /// Categories
-    pub categories: Vec<String>,
-}
-
 impl IndexTemplate {
     pub async fn new(
         context: AppStateContext,
@@ -49,32 +40,9 @@ impl IndexTemplate {
     }
 }
 
-impl UploadTemplate {
-    pub async fn new(context: AppStateContext) -> Result<Self, AppStateError> {
-        let categories: Vec<String> = context
-            .db
-            .category()
-            .list()
-            .await
-            .context(CategorySnafu)?
-            .into_iter()
-            .map(|x| x.name.to_string())
-            .collect();
-
-        Ok(UploadTemplate {
-            state: context,
-            categories,
-        })
-    }
-}
-
 pub async fn index(
     context: AppStateContext,
     status: StatusCookie,
 ) -> Result<FlashTemplate<IndexTemplate>, AppStateError> {
     IndexTemplate::new(context, status).await
-}
-
-pub async fn upload(context: AppStateContext) -> Result<UploadTemplate, AppStateError> {
-    UploadTemplate::new(context).await
 }
