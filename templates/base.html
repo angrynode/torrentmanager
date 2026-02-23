@@ -15,21 +15,7 @@
     {% include "menus/header.html" %}
 
     <section class="section" style="padding-top: 100px;">
-      <div class="container">
-        {% for error in state.errors %}
-          <div class="notification is-danger">
-            <details>
-              <summary>{{ error }}</summary>
-              <ul class="ml-5">
-                {% for inner_error in error.inner_errors() %}
-                  <li>→ {{ inner_error }}</li>
-                {% endfor %}
-              </ul>
-            </details>
-          </div>
-        {% endfor %}
-      </div>
-
+      {% block errors %}{% endblock %}
       {% block main %}{% endblock %}
     </section>
 

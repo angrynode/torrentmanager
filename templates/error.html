@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 
-{% block main %}
+{% block errors %}
+  <div class="container">
+  {% for error in errors %}
+  <div class="notification is-danger">
+    <details>
+      <summary>{{ error }}</summary>
+      <ul class="ml-5">
+        {% for inner_error in error.inner_errors() %}
+          <li>→ {{ inner_error }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  </div>
+  {% endfor %}
+</div>
 {% endblock %}
 
 {% block footer_extra %}
+{# Maybe we failed to load some of the global state displayed in the footer #}
 {% endblock %}
