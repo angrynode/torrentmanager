@@ -12,7 +12,6 @@ use super::*;
 /// by rendering the AppStateError into an axum Response.
 pub struct AppStateContext {
     pub db: DatabaseOperator,
-    pub errors: Vec<AppStateError>,
     pub free_space: FreeSpace,
     pub state: AppState,
     pub user: Option<User>,
@@ -29,7 +28,6 @@ impl FromRequestParts<AppState> for AppStateContext {
 
         Ok(Self {
             db: DatabaseOperator::new(state.clone(), user.clone()),
-            errors: vec![],
             free_space: state.free_space()?,
             state: state.clone(),
             user,

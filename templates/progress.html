@@ -20,9 +20,7 @@
 
     <div class="card mt-4">
       <div class="card-body">
-        {% if state.errors.len() != 0 %}
-          <h2>Could not reach Bittorrent client (see errors above)</h2>
-        {% else if torrent_list.torrents.len() == 0 %}
+        {% if torrent_list.torrents.len() == 0 %}
           {% include "shared/empty_state.html" %}
         {% else %}
           {% include "progress_table.html" %}

@@ -61,33 +61,21 @@ impl AppStateError {
 /// Global error page generated from an [AppStateError].
 #[derive(Debug, Template, WebTemplate)]
 #[template(path = "error.html")]
-pub struct AppStateErrorContext {
-    state: AppStateErrorContextInner,
-}
-
-/// Helper struct so we can reuse base.html
-/// with all it's `state.foo` expressions.
-#[derive(Debug)]
-pub struct AppStateErrorContextInner {
-    // TODO: askama doesn't handle recursion well, so we convert
-    // all errors to strings. Maybe related to:
-    // https://github.com/askama-rs/askama/issues/393
+pub struct AppStateErrorTemplate {
     errors: Vec<AppStateError>,
 }
 
-impl From<AppStateError> for AppStateErrorContext {
+impl From<AppStateError> for AppStateErrorTemplate {
     fn from(e: AppStateError) -> Self {
         // An error is being displayed to the user, make sure it's also written in the logs
         e.log();
-        Self {
-            state: AppStateErrorContextInner { errors: vec![e] },
-        }
+        Self { errors: vec![e] }
     }
 }
 
 impl IntoResponse for AppStateError {
     fn into_response(self) -> Response {
-        let error_context = AppStateErrorContext::from(self);
+        let error_context = AppStateErrorTemplate::from(self);
         (StatusCode::INTERNAL_SERVER_ERROR, error_context).into_response()
     }
 }
