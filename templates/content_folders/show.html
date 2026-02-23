@@ -1,7 +1,7 @@
 {% extends "layouts/file_system_base.html" %}
 
 {% block folder_title %}
-  {{ current_content_folder.name }}
+  {{ folder.name }}
 {% endblock%}
 
 {% block actions_buttons %}
@@ -22,7 +22,7 @@
     </div> 
 
     <input type="hidden" id="category_id" name="category_id" value="{{ category.id }}" />
-    <input type="hidden" id="parent_id" name="parent_id" value="{{ current_content_folder.id }}" />
+    <input type="hidden" id="parent_id" name="parent_id" value="{{ folder.id }}" />
     <input type="hidden" id="path" name="path" value="fake_path" />
 
     <div class="text-center mt-4">
