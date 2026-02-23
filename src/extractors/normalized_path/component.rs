@@ -9,7 +9,7 @@ use std::str::FromStr;
 use super::*;
 
 /// [NormalizedPath] with extra constraint that it contains no slashes.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, Hash, DeriveValueType)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, Hash, DeriveValueType)]
 #[sea_orm(value_type = "String")]
 #[serde(into = "String", try_from = "String")]
 pub struct NormalizedPathComponent {
