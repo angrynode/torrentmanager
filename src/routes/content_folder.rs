@@ -30,7 +30,7 @@ pub struct ContentFolderShowTemplate {
     /// Global application state
     pub state: AppStateContext,
     /// current folder
-    pub current_content_folder: content_folder::Model,
+    pub folder: content_folder::Model,
     /// Folders with parent_id set to current folder
     pub children: Vec<FileSystemEntry>,
     /// Category
@@ -39,6 +39,26 @@ pub struct ContentFolderShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
+}
+
+impl ContentFolderShowTemplate {
+    fn new(context: AppStateContext, folder: FolderRequest) -> Self {
+        let FolderRequest {
+            breadcrumbs,
+            category,
+            children,
+            folder,
+        } = folder;
+
+        Self {
+            breadcrumbs,
+            category,
+            children,
+            flash: None,
+            folder,
+            state: context,
+        }
+    }
 }
 
 impl FallibleTemplate for ContentFolderShowTemplate {
@@ -52,14 +72,7 @@ pub async fn show(
     folder: FolderRequest,
     status: StatusCookie,
 ) -> FlashTemplate<ContentFolderShowTemplate> {
-    status.with_template(ContentFolderShowTemplate {
-        breadcrumbs: folder.breadcrumbs,
-        children: folder.children,
-        current_content_folder: folder.folder,
-        category: folder.category,
-        state: context,
-        flash: None,
-    })
+    status.with_template(ContentFolderShowTemplate::new(context, folder))
 }
 
 pub async fn create(
