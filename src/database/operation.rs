@@ -38,7 +38,7 @@ pub enum Operation {
 
 impl std::fmt::Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &serde_json::to_string(self).unwrap())
+        write!(f, "{}", serde_json::to_string(self).unwrap())
     }
 }
 
