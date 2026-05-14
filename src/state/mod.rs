@@ -49,7 +49,7 @@ impl AppState {
         .context(InitAPISnafu)?;
 
         let sqlite_path = config.sqlite_path.clone();
-        let database = Database::connect(format!("sqlite://{}?mode=rwc", &sqlite_path))
+        let database = Database::connect(format!("sqlite://{}?mode=rwc", sqlite_path))
             .await
             .context(SqliteSnafu)?;
 

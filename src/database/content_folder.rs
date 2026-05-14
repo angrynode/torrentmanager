@@ -46,6 +46,8 @@ pub enum ContentFolderError {
     PathTaken { path: String },
     #[snafu(display("The Content Folder (Path: {path}) does not exist"))]
     NotFound { path: String },
+    #[snafu(display("The content folder id is invalid: {id}"))]
+    IDInvalid { id: String },
     #[snafu(display("Database error"))]
     DB { source: sea_orm::DbErr },
     #[snafu(display("Failed to save the operation log"))]
@@ -101,9 +103,11 @@ impl ContentFolderOperator {
         }
     }
 
-    /// Find one Content Folder by ID
+    /// Find one content folder by ID
     ///
-    /// Should not fail, unless SQLite was corrupted for some reason.
+    /// Fails if:
+    ///
+    /// - the requested ID does not exist
     pub async fn find_by_id(&self, id: i32) -> Result<Model, ContentFolderError> {
         let content_folder = Entity::find_by_id(id)
             .one(&self.state.database)
@@ -116,6 +120,19 @@ impl ContentFolderOperator {
                 path: id.to_string(),
             }),
         }
+    }
+
+    /// Find one content folder by stringy ID
+    ///
+    /// Fails if:
+    ///
+    /// - the requested ID does not exist
+    /// - the requested ID could not be parsed into an i32
+    pub async fn find_by_id_str(&self, id: &str) -> Result<Model, ContentFolderError> {
+        let id: i32 = id
+            .parse()
+            .map_err(|_e| ContentFolderError::IDInvalid { id: id.to_string() })?;
+        self.find_by_id(id).await
     }
 
     /// Create a new content folder

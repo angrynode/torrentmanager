@@ -27,7 +27,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub path: NormalizedPathAbsolute,
     #[sea_orm(has_many)]
-    pub content_folders: HasMany<super::content_folder::Entity>,
+    pub content_folders: HasMany<content_folder::Entity>,
 }
 
 #[async_trait::async_trait]
@@ -48,6 +48,8 @@ pub enum CategoryError {
     DB { source: sea_orm::DbErr },
     #[snafu(display("The category (ID: {id}) does not exist"))]
     IDNotFound { id: i32 },
+    #[snafu(display("The category id is invalid: {id}"))]
+    IDInvalid { id: String },
     #[snafu(display("The category (Name: {name}) does not exist"))]
     NameNotFound { name: String },
     #[snafu(display("Failed to save the operation log"))]
@@ -84,7 +86,9 @@ impl CategoryOperator {
 
     /// Find one category by ID
     ///
-    /// Should not fail, unless SQLite was corrupted for some reason.
+    /// Fails if:
+    ///
+    /// - the requested ID does not exist
     pub async fn find_by_id(&self, id: i32) -> Result<Model, CategoryError> {
         let category = Entity::find_by_id(id)
             .one(&self.state.database)
@@ -95,6 +99,19 @@ impl CategoryOperator {
             Some(category) => Ok(category),
             None => Err(CategoryError::IDNotFound { id }),
         }
+    }
+
+    /// Find one category by stringy ID
+    ///
+    /// Fails if:
+    ///
+    /// - the requested ID does not exist
+    /// - the requested ID could not be parsed into an i32
+    pub async fn find_by_id_str(&self, id: &str) -> Result<Model, CategoryError> {
+        let id: i32 = id
+            .parse()
+            .map_err(|_e| CategoryError::IDInvalid { id: id.to_string() })?;
+        self.find_by_id(id).await
     }
 
     /// Find one category by Name
