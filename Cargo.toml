@@ -12,62 +12,62 @@ name = "torrentmanager"
 path = "src/main.rs"
 
 [dependencies]
-askama = "0.15"
+askama = "0.16"
 # askama_web::WebTemplate implements axum::IntoResponse
-askama_web = { version = "0.15", features = ["axum-0.8"] }
-axum = { version = "0.8.8", features = ["macros"] }
-axum-extra = { version = "0.12.1", features = ["cookie"] }
+askama_web = { version = "0.16", features = ["axum-0.8"] }
+axum = { version = "0.8.9", features = ["macros"] }
+axum-extra = { version = "0.12.6", features = ["cookie"] }
 # UTF-8 paths for easier String/PathBuf interop
-camino = { version = "1.1.12", features = ["serde1"] }
+camino = { version = "1.2.2", features = ["serde1"] }
 # Date/time management
-chrono = "0.4.41"
+chrono = "0.4.44"
 # CLI parsing:
 #   derive: Parser derive macro
 # Consider adding extra deps:
 #   shadow-rs: build information in CLI
 #   clap_mangen: generate manpage at build time
 #   clap_complete: generate shell autocompletions
-clap = { version = "4.5.45", features = ["derive"] }
+clap = { version = "4.6.1", features = ["derive"] }
 # Automatic -q/-v/-vv/-vvv/-vvvv for verbosity
 clap-verbosity-flag = "3.0.4"
 # Reduce boilerplate for newtype pattern
-derive_more = { version = "2.0.1", features = ["display"] }
-env_logger = "0.11.8"
+derive_more = { version = "2.1.1", features = ["display"] }
+env_logger = "0.11.10"
 # Interactions with the torrent client
 # Comment/uncomment below for development version
 # hightorrent_api = { path = "../hightorrent_api" }
 hightorrent_api = { git = "https://github.com/angrynode/hightorrent_api" }
 # hightorrent_api = "0.2"
-log = "0.4.27"
+log = "0.4.29"
 # SQLite ORM
-sea-orm = { version = "2.0.0-rc.34", features = [ "runtime-tokio", "debug-print", "sqlx-sqlite"] }
+sea-orm = { version = "2.0.0-rc.38", features = [ "runtime-tokio", "debug-print", "sqlx-sqlite"] }
 # SQLite migrations
-sea-orm-migration = { version = "2.0.0-rc.34" }
+sea-orm-migration = { version = "2.0.0-rc.38" }
 # Serialization/deserialization, for example in path extractors
-serde = { version = "1.0.219", features = ["derive", "rc"] }
+serde = { version = "1.0.228", features = ["derive", "rc"] }
 # (De)serialization for operations log
 serde_json = { version = "1" }
 # Error declaration/context
-snafu = "0.8.8"
+snafu = "0.9"
 # Serve static assets directly from the binary
 # Using dev branch because of: https://github.com/M4SS-Code/static-serve/pull/8
 # static-serve = "0.3.0"
-static-serve = { git = "https://github.com/M4SS-Code/static-serve" }
+static-serve = "0.6.1"
 # Extra tokio features:
 #   fs: Filesystem IO integration
 #   rt: Single-threaded runtime
 #   sync: Mutex/RwLock support
 #   time: Sleep/Timeout support
-tokio = { version = "1.47.1", features = ["fs", "rt", "sync", "time"] }
+tokio = { version = "1.52.3", features = ["fs", "rt", "sync", "time"] }
 # Multiple listener integration:
 #   axum08: axum Listener trait integration
 #   clap: CLI parsing
 #   boxed_variant/mpsc_listener: IO mocking in tests
-tokio-listener = { version = "0.5.1", features = ["axum08", "clap", "boxed_variant", "mpsc_listener", "serde"] }
+tokio-listener = { version = "0.5.2", features = ["axum08", "clap", "boxed_variant", "mpsc_listener", "serde"] }
 # Configuration file parsing
 toml = { version = "1", features = ["preserve_order"] }
 # Dependency for free-space calculation
-uucore = { version = "0.6.0", features = ["fsext"] }
+uucore = { version = "0.8.0", features = ["fsext"] }
 # Finding XDG standard directories (such as ~/.config/torrentmanager/config.toml)
 xdg = "3.0.0"
 
