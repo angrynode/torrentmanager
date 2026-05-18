@@ -9,6 +9,7 @@ pub mod extractors;
 pub mod filesystem;
 pub mod middleware;
 pub mod migration;
+pub mod resolver;
 pub mod routes;
 pub mod state;
 
@@ -54,8 +55,17 @@ where
     L: Listener,
     L::Addr: std::fmt::Debug,
 {
-    let state = state::AppState::new(config).await?;
-    let app = router(state);
+    // Create a channel so the webapp can let the resolver know
+    // to resolve new magnets.
+    let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
+
+    let state = state::AppState::new(config, sender).await?;
+    let app = router(state.clone());
+
+    tokio::task::spawn(async move {
+        // Spawn the background task to resolve magnets
+        resolver::Resolver::new(state, receiver).await.serve().await
+    });
 
     axum::serve(listener, app.into_make_service())
         .await

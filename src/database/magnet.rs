@@ -234,6 +234,13 @@ impl MagnetOperator {
         .await
         .context(DBSnafu)?;
 
+        // Now that the magnet has been summoned into the DB,
+        // we should let the resolver know about it.
+        self.state
+            .resolver
+            .send(magnet.clone())
+            .expect("resolver sender channel has been closed");
+
         // Should not fail
         let model = model.try_into_model().unwrap();
 
