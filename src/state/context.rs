@@ -17,6 +17,7 @@ pub struct AppStateContext {
     pub linker: Linker,
     pub state: AppState,
     pub user: Option<User>,
+    pub magnets_count: usize,
 }
 
 impl FromRequestParts<AppState> for AppStateContext {
@@ -27,11 +28,14 @@ impl FromRequestParts<AppState> for AppStateContext {
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let user = User::from_request_parts(parts, state).await?;
+        let db = DatabaseOperator::new(state.clone(), user.clone());
+        let magnets_count = db.magnet().count().await.context(MagnetUploadSnafu)?;
 
         Ok(Self {
             db: DatabaseOperator::new(state.clone(), user.clone()),
             free_space: state.free_space()?,
             linker: Linker::new(state.clone()),
+            magnets_count,
             state: state.clone(),
             user,
         })

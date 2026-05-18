@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 
 use crate::database::content_folder::PathBreadcrumb;
-use crate::database::{category, content_folder, torrent};
+use crate::database::{category, content_folder, magnet, torrent};
 use crate::extractors::folder_request::FolderRequest;
 use crate::extractors::moving::MovingQuery;
 use crate::filesystem::FileSystemEntry;
@@ -37,6 +37,8 @@ pub struct ContentFolderShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
+    /// Related magnets in this folder
+    pub magnets: Vec<magnet::Model>,
     /// Related torrents in this folder
     pub torrents: Vec<torrent::Model>,
     /// If any, the current torrent being moved in the folder.
@@ -54,6 +56,7 @@ impl ContentFolderShowTemplate {
             category,
             children,
             folder,
+            magnets,
             torrents,
         } = folder;
 
@@ -64,6 +67,7 @@ impl ContentFolderShowTemplate {
             flash: None,
             folder,
             state: context,
+            magnets,
             torrents,
             current_torrent,
         }

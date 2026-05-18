@@ -6,7 +6,7 @@ use snafu::prelude::*;
 use std::str::FromStr;
 
 use crate::database::operator::DatabaseOperator;
-use crate::database::{content_folder, operation::*, torrent};
+use crate::database::{content_folder, magnet, operation::*, torrent};
 use crate::extractors::normalized_path::*;
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
@@ -29,6 +29,8 @@ pub struct Model {
     pub path: NormalizedPathAbsolute,
     #[sea_orm(has_many)]
     pub content_folders: HasMany<content_folder::Entity>,
+    #[sea_orm(has_many)]
+    pub magnets: HasMany<magnet::Entity>,
     #[sea_orm(has_many)]
     pub torrents: HasMany<torrent::Entity>,
 }

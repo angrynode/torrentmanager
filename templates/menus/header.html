@@ -18,10 +18,12 @@
         </li>
       </ul>
       <span class="navbar-text">
-        <a class="btn btn-success text-white" href="/upload">
-          <i class="fa fa-download me-2"></i>
-          Download new torrent
-        </a>
+        {% if state is defined && state.magnets_count != 0 %}
+          <a class="btn btn-success text-white" href="/magnet">
+            <i class="fa fa-upload me-2"></i>
+            Magnets ({{ state.magnets_count }})
+          </a>
+        {% endif %}
       </span>
     </div>
   </div>

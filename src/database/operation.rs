@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::extractors::user::User;
 use crate::routes::category::CategoryForm;
 use crate::routes::content_folder::ContentFolderForm;
+use crate::routes::magnet::MagnetForm;
 use crate::routes::torrent::TorrentForm;
 
 /// Type of operation applied to the database.
@@ -26,6 +27,7 @@ pub enum Table {
     Category,
     ContentFolder,
     Torrent,
+    Magnet,
 }
 
 /// Operation applied to the database.
@@ -36,6 +38,7 @@ pub enum Table {
 pub enum Operation {
     Category(CategoryForm),
     ContentFolder(ContentFolderForm),
+    Magnet(MagnetForm),
     Torrent(TorrentForm),
     MoveTorrent {
         torrent: i32,

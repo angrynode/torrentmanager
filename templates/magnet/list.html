@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block main %}
+  <div class="container">
+    <h1>List of uploaded magnets not yet resolved</h1>
+
+    <div class="card my-3">
+      <div class="card-body">
+        <div class="table-responsive-lg">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            {% for magnet in magnets %}
+            <tr>
+              <td><i class="fa fa-spinner fa-pulse me-2"></i></td>
+              <td class="is-left" align="left">{{ magnet.name }}</td>
+              <td>
+                <a href="{{ state.linker.folder_url(magnet.category.as_ref().unwrap().into(), magnet.content_folder.as_ref()) }}" class="btn btn-success">Aller dans le dossier</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock main %}

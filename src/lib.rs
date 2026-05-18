@@ -39,6 +39,8 @@ pub fn router(state: state::AppState) -> Router {
         .route("/logs", get(routes::logs::index))
         .route("/torrent/upload", post(routes::torrent::upload))
         .route("/torrent", get(routes::torrent::list))
+        .route("/magnet/upload", post(routes::magnet::upload))
+        .route("/magnet", get(routes::magnet::list))
         // Register static assets routes
         .nest("/assets", static_router())
         // Insert request timing

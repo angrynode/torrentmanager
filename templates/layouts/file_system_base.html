@@ -94,6 +94,24 @@
     </div>
     {% endif %}
 
+    {# magnets is not defined on the homepage (category list) #}
+    {% if magnets is defined && magnets.len() > 0 %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <div class="p-4">
+          <div class="d-flex align-items-center mb-4">
+            <h4 class="mb-0">{{ magnets.len() }} magnets waiting for import in this folder</h4>
+          </div>
+        </div>
+        <ul class="list-group">
+        {% for magnet in magnets %}
+        <li>{{ magnet.name }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card mt-4">
       <div class="card-body">
         <div class="p-4">

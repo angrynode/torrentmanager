@@ -38,6 +38,10 @@ pub enum AppStateError {
     IO { source: std::io::Error },
     #[snafu(display("{reason}"))]
     Static { reason: &'static str },
+    #[snafu(display("Magnet upload error"))]
+    MagnetUpload {
+        source: crate::database::magnet::MagnetError,
+    },
     #[snafu(display("Torrent upload error"))]
     TorrentUpload {
         source: crate::database::torrent::TorrentError,
