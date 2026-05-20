@@ -38,9 +38,25 @@ pub enum AppStateError {
     IO { source: std::io::Error },
     #[snafu(display("{reason}"))]
     Static { reason: &'static str },
+    #[snafu(display("Torrent upload error"))]
+    TorrentUpload {
+        source: crate::database::torrent::TorrentError,
+    },
 }
 
 impl AppStateError {
+    // TODO: this is obviously wrong we don't want to pass around a
+    // stringy representation like this. But it'll do the job for now.
+    pub fn to_string_recurse(&self) -> String {
+        let mut s = String::new();
+        s.push_str(&self.to_string());
+        for error in self.iter_chain().skip(1) {
+            s.push('\n');
+            s.push_str(&error.to_string());
+        }
+        s
+    }
+
     pub fn inner_errors(&self) -> Vec<Box<dyn std::error::Error + '_>> {
         let mut inner_errors = vec![];
         for error in self.iter_chain().skip(1) {

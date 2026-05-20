@@ -9,6 +9,7 @@ use std::str::FromStr;
 use crate::database::category::{self, CategoryError};
 use crate::database::operation::{Operation, OperationId, OperationLog, OperationType, Table};
 use crate::database::operator::DatabaseOperator;
+use crate::database::torrent;
 use crate::extractors::normalized_path::{NormalizedPathAbsolute, NormalizedPathComponent};
 use crate::extractors::user::User;
 use crate::routes::content_folder::ContentFolderForm;
@@ -43,6 +44,8 @@ pub struct Model {
     pub parent_id: Option<i32>,
     #[sea_orm(self_ref, relation_enum = "Parent", from = "parent_id", to = "id")]
     pub parent: HasOne<Entity>,
+    #[sea_orm(has_many)]
+    pub torrents: HasMany<torrent::Entity>,
 }
 
 #[async_trait::async_trait]

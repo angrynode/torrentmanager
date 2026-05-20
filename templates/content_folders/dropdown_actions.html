@@ -4,7 +4,43 @@
   </button>
   <ul class="dropdown-menu">
     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#createSubFolder">Create a subfolder</a></li>
-    <li><a class="dropdown-item" href="#">Import magnet link</a></li>
-    <li><a class="dropdown-item" href="#">Import torrent file</a></li>
+    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importMagnetLink" href="#">Import magnet link</a></li>
+    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importTorrentFile" href="#">Import torrent file</a></li>
   </ul>
+</div>
+
+<div class="modal fade" id="importTorrentFile" tabindex="-1" aria-labelledby="importTorrentFile" aria-hidden="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">Import Torrent</h1>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/torrent/upload" accept-charset="utf-8" enctype="multipart/form-data">
+          <div class="alert alert-info text-start">
+            <p>
+              You are about to import a torrent into the category <strong>{{ category.name }}</strong>, in the folder
+              <code class="ms-2"><span><small>{{ category.name }}{% if current_content_folder is defined %}{{current_content_folder.path }}{% endif %}/</small></span></code>.
+            </p>
+          </div>
+          <div class="row align-items-center">
+            <div class="col-md-12 text-center">
+              <img src="/assets/images/torrent.png" class="img-64">
+            </div>
+            <div class="col-md-12 mt-3">
+              <input type="hidden" name="category_id" value="{{ category.id }}">
+              {% if folder is defined %}
+                <input type="hidden" name="content_folder_id" value="{{ folder.id }}">
+              {% endif %}
+              <input type="file" id="torrent" name="file" class="form-control" accept=".torrent,application/x-bittorrent">
+
+              <div class="text-center mt-4">
+                <input type="Submit" class="btn btn-success btn-lg" value="Import">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>

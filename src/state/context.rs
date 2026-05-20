@@ -2,6 +2,7 @@ use axum::extract::{FromRequestParts, OptionalFromRequestParts};
 use axum::http::request::Parts;
 
 use crate::database::operator::DatabaseOperator;
+use crate::state::linker::Linker;
 
 use super::*;
 
@@ -13,6 +14,7 @@ use super::*;
 pub struct AppStateContext {
     pub db: DatabaseOperator,
     pub free_space: FreeSpace,
+    pub linker: Linker,
     pub state: AppState,
     pub user: Option<User>,
 }
@@ -29,6 +31,7 @@ impl FromRequestParts<AppState> for AppStateContext {
         Ok(Self {
             db: DatabaseOperator::new(state.clone(), user.clone()),
             free_space: state.free_space()?,
+            linker: Linker::new(state.clone()),
             state: state.clone(),
             user,
         })

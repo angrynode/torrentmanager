@@ -17,6 +17,7 @@ askama = "0.16"
 askama_web = { version = "0.16", features = ["axum-0.8"] }
 axum = { version = "0.8.9", features = ["macros"] }
 axum-extra = { version = "0.12.6", features = ["cookie"] }
+axum_typed_multipart = { version = "0.16.5", default-features = false }
 # UTF-8 paths for easier String/PathBuf interop
 camino = { version = "1.2.2", features = ["serde1"] }
 # Date/time management
@@ -36,7 +37,7 @@ env_logger = "0.11.10"
 # Interactions with the torrent client
 # Comment/uncomment below for development version
 # hightorrent_api = { path = "../hightorrent_api" }
-hightorrent_api = { git = "https://github.com/angrynode/hightorrent_api" }
+hightorrent_api = { git = "https://github.com/angrynode/hightorrent_api", branch = "feat-sea-orm", features = [ "sea_orm" ] }
 # hightorrent_api = "0.2"
 log = "0.4.29"
 # SQLite ORM

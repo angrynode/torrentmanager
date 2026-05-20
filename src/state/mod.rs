@@ -12,6 +12,7 @@ pub use context::AppStateContext;
 pub mod error;
 pub mod flash_message;
 pub mod free_space;
+pub mod linker;
 pub mod logger;
 
 use error::*;
