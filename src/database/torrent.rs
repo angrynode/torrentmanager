@@ -62,6 +62,10 @@ pub struct TorrentOperator {
 }
 
 impl TorrentOperator {
+    pub fn new(state: AppState, user: Option<User>) -> Self {
+        Self { state, user }
+    }
+
     pub fn db(&self) -> DatabaseOperator {
         DatabaseOperator {
             state: self.state.clone(),
@@ -95,6 +99,35 @@ impl TorrentOperator {
             .all(&self.state.database)
             .await
             .context(DBSnafu)
+    }
+
+    /// List torrents in a specific category (without recursing)
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn list_for_category(&self, category_id: i32) -> Result<Vec<Model>, TorrentError> {
+        // TODO: optimization
+        Ok(self
+            .list()
+            .await?
+            .into_iter()
+            .filter(|x| x.category_id == category_id && x.content_folder_id.is_none())
+            .collect())
+    }
+
+    /// List torrents in a specific content_folder (without recursing)
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn list_for_content_folder(
+        &self,
+        content_folder_id: i32,
+    ) -> Result<Vec<Model>, TorrentError> {
+        // TODO: optimization
+        Ok(self
+            .list()
+            .await?
+            .into_iter()
+            .filter(|x| x.content_folder_id == Some(content_folder_id))
+            .collect())
     }
 
     /// Count magnets

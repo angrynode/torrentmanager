@@ -42,6 +42,32 @@
       </div>
     </div>
 
+    {# torrents is not defined on the homepage (category list) #}
+    {% if torrents is defined && torrents.len() > 0 %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <div class="p-4">
+          <div class="d-flex align-items-center mb-4">
+            <h4 class="mb-0">{{ torrents.len() }} torrents waiting for confirmation in this folder</h4>
+          </div>
+        </div>
+        <ul class="list-group">
+        {% for torrent in torrents %}
+        <li>
+          <span>{{ torrent.name }} will create the following folders/files in this folder:</span>
+          {# TODO: file tree in hightorrent #}
+          <ul>
+          {% for file in torrent.file.decoded.files().unwrap() %}
+            <li>({{ file.size | filesizeformat }}) {{ file.path.to_str().unwrap() }}</li>
+          {% endfor %}
+          </ul>
+        </li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card mt-4">
       <div class="card-body">
         <div class="p-4">

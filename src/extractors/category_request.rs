@@ -4,6 +4,7 @@ use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryOperator};
 use crate::database::content_folder::PathBreadcrumb;
+use crate::database::torrent::{self, TorrentOperator};
 use crate::filesystem::FileSystemEntry;
 use crate::state::{AppState, error::*};
 
@@ -34,6 +35,7 @@ pub struct CategoryRequest {
     pub category: category::Model,
     pub breadcrumbs: Vec<PathBreadcrumb>,
     pub children: Vec<FileSystemEntry>,
+    pub torrents: Vec<torrent::Model>,
 }
 
 impl FromRequestParts<AppState> for CategoryRequest {
@@ -66,10 +68,16 @@ impl FromRequestParts<AppState> for CategoryRequest {
 
         let breadcrumbs = PathBreadcrumb::for_filesystem_path(category.name.as_str());
 
+        let torrents = TorrentOperator::new(app_state.clone(), None)
+            .list_for_category(category.id)
+            .await
+            .context(TorrentUploadSnafu)?;
+
         Ok(Self {
             category,
             children,
             breadcrumbs,
+            torrents,
         })
     }
 }

@@ -5,7 +5,7 @@ use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::database::content_folder::PathBreadcrumb;
-use crate::database::{category, content_folder};
+use crate::database::{category, content_folder, torrent};
 use crate::extractors::folder_request::FolderRequest;
 use crate::filesystem::FileSystemEntry;
 use crate::state::AppStateContext;
@@ -35,6 +35,8 @@ pub struct ContentFolderShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
+    /// Related torrents in this folder
+    pub torrents: Vec<torrent::Model>,
 }
 
 impl ContentFolderShowTemplate {
@@ -44,6 +46,7 @@ impl ContentFolderShowTemplate {
             category,
             children,
             folder,
+            torrents,
         } = folder;
 
         Self {
@@ -53,6 +56,7 @@ impl ContentFolderShowTemplate {
             flash: None,
             folder,
             state: context,
+            torrents,
         }
     }
 }

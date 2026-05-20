@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
+use crate::database::torrent;
 use crate::extractors::category_request::{CategoriesRequest, CategoryRequest};
 use crate::filesystem::FileSystemEntry;
 use crate::routes::content_folder::ContentFolderForm;
@@ -92,6 +93,8 @@ pub struct CategoryShowTemplate {
     pub flash: Option<OperationStatus>,
     /// Breadcrumbs navigation
     pub breadcrumbs: Vec<PathBreadcrumb>,
+    /// Torrents in this category
+    pub torrents: Vec<torrent::Model>,
 }
 
 impl CategoryShowTemplate {
@@ -100,6 +103,7 @@ impl CategoryShowTemplate {
             breadcrumbs,
             category,
             children,
+            torrents,
         } = category;
 
         Self {
@@ -108,6 +112,7 @@ impl CategoryShowTemplate {
             children,
             flash: None,
             state: context,
+            torrents,
         }
     }
 }

@@ -4,6 +4,7 @@ use snafu::prelude::*;
 
 use crate::database::category::{self, CategoryOperator};
 use crate::database::content_folder::{self, ContentFolderOperator, PathBreadcrumb};
+use crate::database::torrent::{self, TorrentOperator};
 use crate::filesystem::FileSystemEntry;
 use crate::state::AppState;
 use crate::state::error::*;
@@ -14,6 +15,7 @@ pub struct FolderRequest {
     pub folder: content_folder::Model,
     pub children: Vec<FileSystemEntry>,
     pub breadcrumbs: Vec<PathBreadcrumb>,
+    pub torrents: Vec<torrent::Model>,
 }
 
 impl FromRequestParts<AppState> for FolderRequest {
@@ -34,6 +36,7 @@ impl FromRequestParts<AppState> for FolderRequest {
         // Read-only operators: no need to extract the current user
         let category_operator = CategoryOperator::new(app_state.clone(), None);
         let content_folder_operator = ContentFolderOperator::new(app_state.clone(), None);
+        let torrent_operator = TorrentOperator::new(app_state.clone(), None);
 
         // get current content folders with Path
         let current_content_folder = content_folder_operator
@@ -60,11 +63,17 @@ impl FromRequestParts<AppState> for FolderRequest {
             category.name, current_content_folder.path
         ));
 
+        let torrents = torrent_operator
+            .list_for_content_folder(current_content_folder.id)
+            .await
+            .context(TorrentUploadSnafu)?;
+
         Ok(Self {
             category,
             folder: current_content_folder,
             children,
             breadcrumbs,
+            torrents,
         })
     }
 }
