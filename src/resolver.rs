@@ -7,7 +7,8 @@ use tokio::time::{Duration, sleep};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::database::magnet::MagnetOperator;
+use crate::database::magnet;
+use crate::routes::torrent::TorrentForm;
 use crate::state::AppState;
 
 /// A magnet link resolver
@@ -21,11 +22,10 @@ use crate::state::AppState;
 /// for updates on a channel determined on startup. This will
 /// avoid polluting the logs with queries to read the table.
 pub struct Resolver {
-    operator: MagnetOperator,
+    operator: magnet::MagnetOperator,
     // Channel to receive new magnets to resolve
     receiver: UnboundedReceiver<MagnetLink>,
     session: Arc<Session>,
-    state: AppState,
     // Keep track of background tasks resolving torrent files from magnets
     // In the future, this will allow to cancel/delete tasks.
     tasks: HashMap<TorrentID, JoinHandle<TorrentFile>>,
@@ -46,13 +46,12 @@ impl Resolver {
         .unwrap();
 
         Self {
-            operator: MagnetOperator {
+            operator: magnet::MagnetOperator {
                 state: state.clone(),
                 user: None,
             },
             receiver,
             session,
-            state,
             tasks: HashMap::new(),
         }
     }
@@ -131,7 +130,18 @@ impl Resolver {
         }
     }
 
-    /// Check if some tasks have finished resolving, and save result in the DB.
+    /// Check if some magnets have finished resolving, and save result in the DB.
+    ///
+    /// In order to avoid losing data, we check in this order:
+    ///
+    /// - if the magnet no longer exists, do nothing
+    /// - if there is already a corresponding torrent, do nothing
+    /// - save the corresponding torrent
+    /// - remove the corresponding magnet if the saving was successful
+    ///
+    /// On startup, we will further check that no dangling magnets are left due to
+    /// the program crashing/stopping between saving the torrent and removing
+    /// the magnet.
     pub async fn save_resolved(&mut self) {
         let finished_ids: Vec<TorrentID> = self
             .tasks
@@ -146,6 +156,22 @@ impl Resolver {
             .collect();
         for finished_id in finished_ids {
             log::info!("Magnet {finished_id} has finished resolving. Saving to DB.");
+
+            // First verify if someone has in the meantime added the fully resolved torrent?
+            if let Ok(_torrent) = self
+                .operator
+                .db()
+                .torrent()
+                .get_by_torrent_id(&finished_id)
+                .await
+            {
+                // Nothing to do, everything is already well and good.
+                // Well actually, the imported category/folder for the torrent may be different from
+                // the one requested on the magnet. But since we already have a duplicate check on
+                // magnet/torrent upload and this case is only for TOCTOU race cases, ignoring
+                // it seems reasonable.
+                return;
+            }
 
             // Get the raw task handle, removing it from the active tasks
             let handle = self.tasks.remove(&finished_id).unwrap();
@@ -164,10 +190,22 @@ impl Resolver {
                     continue
                 }
 
-            }
+                // Now that we have saved the torrent state, move to the torrent table
+                let torrent_form = TorrentForm {
+                    category_id: magnet.category_id,
+                    content_folder_id: magnet.content_folder_id,
+                    file: axum::body::Bytes::copy_from_slice(&torrent_file.to_vec()),
+                };
 
-            // TODO: save to the torrent DB
-            log::info!("Torrent file for magnet {finished_id} has been saved to DB");
+                if let Err(e) = self.operator.db().torrent().create(&torrent_form).await {
+                    // If the creation was not successful, log it!
+                    log::error!(
+                        "Failed to move finished magnet {finished_id} to the torrent table: {e}"
+                    );
+                }
+
+                log::info!("Torrent file for magnet {finished_id} has been saved to DB");
+            }
         }
     }
 }

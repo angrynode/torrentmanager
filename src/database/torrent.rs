@@ -53,6 +53,8 @@ pub enum TorrentError {
     NoSuchCategory { id: i32 },
     #[snafu(display("Requested content folder not found"))]
     NoSuchContentFolder { id: i32 },
+    #[snafu(display("This torrent is already known"))]
+    DuplicateTorrent,
 }
 
 #[derive(Clone, Debug)]
@@ -203,10 +205,9 @@ impl TorrentOperator {
 
         // Check duplicates
         let list = self.list().await?;
-
         if list.iter().any(|x| x.torrent_id == torrent.id()) {
             // The torrent is already known
-            return self.get_by_torrent_id(&torrent.id()).await;
+            return Err(TorrentError::DuplicateTorrent);
         }
 
         // Verify that the requested category/content_folder exist
@@ -239,6 +240,9 @@ impl TorrentOperator {
         .save(&self.state.database)
         .await
         .context(DBSnafu)?;
+
+        // Now if there was a magnet with this torrentID, we just remove it and cancel the task
+        self.db().magnet().cancel_and_remove(&torrent.id()).await;
 
         // Should not fail
         let model = model.try_into_model().unwrap();

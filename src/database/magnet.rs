@@ -6,6 +6,7 @@ use snafu::prelude::*;
 
 use crate::database::operation::*;
 use crate::database::operator::DatabaseOperator;
+use crate::database::torrent::TorrentError;
 use crate::database::{category, content_folder};
 use crate::extractors::user::User;
 use crate::routes::magnet::MagnetForm;
@@ -53,6 +54,12 @@ pub enum MagnetError {
     NoSuchCategory { id: i32 },
     #[snafu(display("Requested content folder not found"))]
     NoSuchContentFolder { id: i32 },
+    #[snafu(display("The magnet is already uploaded"))]
+    DuplicateMagnet,
+    #[snafu(display("This magnet is already known in the system with the full torrent"))]
+    DuplicateTorrent,
+    #[snafu(display("Failed to read the torrent list"))]
+    Torrent { source: TorrentError },
 }
 
 #[derive(Clone, Debug)]
@@ -200,7 +207,15 @@ impl MagnetOperator {
 
         if list.iter().any(|x| x.torrent_id == magnet.id()) {
             // The magnet is already known
-            return self.get_by_torrent_id(&magnet.id()).await;
+            return Err(MagnetError::DuplicateMagnet);
+        }
+
+        // Check for duplicates in the torrent table, so we don't
+        // even have to resolve the magnet.
+        let list = self.db().torrent().list().await.context(TorrentSnafu)?;
+        if list.iter().any(|x| x.torrent_id == magnet.id()) {
+            // The magnet is already known as a torrent
+            return Err(MagnetError::DuplicateTorrent);
         }
 
         // Verify that the requested category/content_folder exist
@@ -263,5 +278,15 @@ impl MagnetOperator {
             .context(LoggerSnafu)?;
 
         Ok(model)
+    }
+
+    /// Removes (and cancels resolution) for a given magnet,
+    ///
+    /// if it was previously known. Has no effect otherwise.
+    pub async fn cancel_and_remove(&self, torrent_id: &TorrentID) {
+        if let Ok(magnet) = self.get_by_torrent_id(torrent_id).await {
+            // TODO: should we error here?
+            self.delete(magnet.id).await.unwrap();
+        }
     }
 }
