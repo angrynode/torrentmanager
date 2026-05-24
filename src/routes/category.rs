@@ -1,21 +1,22 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::Form;
-use axum::extract::Path;
+use axum::extract::{Path, Query};
+use axum::response::{IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use snafu::prelude::*;
 
 use crate::database::category;
 use crate::database::content_folder::PathBreadcrumb;
 use crate::database::torrent;
 use crate::extractors::category_request::{CategoriesRequest, CategoryRequest};
+use crate::extractors::moving::MovingQuery;
 use crate::filesystem::FileSystemEntry;
 use crate::routes::content_folder::ContentFolderForm;
 use crate::routes::index::IndexTemplate;
-use crate::state::AppStateContext;
-use crate::state::flash_message::{
-    FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
-};
+use crate::state::flash_message::{FallibleTemplate, FlashRedirect, OperationStatus, StatusCookie};
+use crate::state::{AppStateContext, error::*};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CategoryForm {
@@ -95,10 +96,16 @@ pub struct CategoryShowTemplate {
     pub breadcrumbs: Vec<PathBreadcrumb>,
     /// Torrents in this category
     pub torrents: Vec<torrent::Model>,
+    /// If any, the current torrent being moved in the folder.
+    pub current_torrent: Option<torrent::Model>,
 }
 
 impl CategoryShowTemplate {
-    fn new(context: AppStateContext, category: CategoryRequest) -> Self {
+    fn new(
+        context: AppStateContext,
+        category: CategoryRequest,
+        current_torrent: Option<torrent::Model>,
+    ) -> Self {
         let CategoryRequest {
             breadcrumbs,
             category,
@@ -113,6 +120,7 @@ impl CategoryShowTemplate {
             flash: None,
             state: context,
             torrents,
+            current_torrent,
         }
     }
 }
@@ -127,8 +135,41 @@ pub async fn show(
     context: AppStateContext,
     category: CategoryRequest,
     status: StatusCookie,
-) -> FlashTemplate<CategoryShowTemplate> {
-    status.with_template(CategoryShowTemplate::new(context, category))
+    Query(moving): Query<MovingQuery>,
+) -> Result<Response, AppStateError> {
+    if let Some(id) = moving.id {
+        // We are currently moving a torrent between folders
+        let torrent: torrent::Model = context
+            .db
+            .torrent()
+            .get(id)
+            .await
+            .context(TorrentUploadSnafu)?;
+        if moving.validate {
+            // Save to DB the new location of the torrent
+            let _torrent = context
+                .db
+                .torrent()
+                .update_category_content_folder(torrent.clone(), category.category.clone(), None)
+                .await
+                .context(TorrentUploadSnafu)?;
+            // Now we produce a redirection (to the same page) in order to refresh the list of torrents
+            // in this folder, which was already computed.
+            Ok(status
+                .with_success("Torrent successfully saved to this folder".to_string())
+                // Need to remove the query params
+                .redirect("?")
+                .into_response())
+        } else {
+            Ok(status
+                .with_template(CategoryShowTemplate::new(context, category, Some(torrent)))
+                .into_response())
+        }
+    } else {
+        Ok(status
+            .with_template(CategoryShowTemplate::new(context, category, None))
+            .into_response())
+    }
 }
 
 pub async fn create_folder(
@@ -152,7 +193,7 @@ pub async fn create_folder(
         }
         Err(error) => {
             let status = OperationStatus::error(error);
-            Err(status.with_template(CategoryShowTemplate::new(context, category)))
+            Err(status.with_template(CategoryShowTemplate::new(context, category, None)))
         }
     }
 }

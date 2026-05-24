@@ -37,6 +37,11 @@ pub enum Operation {
     Category(CategoryForm),
     ContentFolder(ContentFolderForm),
     Torrent(TorrentForm),
+    MoveTorrent {
+        torrent: i32,
+        category: i32,
+        content_folder: Option<i32>,
+    },
 }
 
 impl std::fmt::Display for Operation {

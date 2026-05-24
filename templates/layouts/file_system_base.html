@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{%- macro query_current_torrent() -%}
+{%- if current_torrent is defined -%}
+{%- if let Some(current_torrent) = current_torrent -%}?id={{ current_torrent.id }}{%- endif -%}
+{%- endif -%}
+{%- endmacro query_current_torrent -%}
+
 {% block main %}
   <div class="container">
     <h1>File System</h1>
@@ -12,6 +18,22 @@
       <div class="alert alert-warning  mt-4">
         The disks are almost full : <span class="fw-bold">{{ state.free_space.free_space_gib }} GiB left</span> 
       </div>
+    {% endif %}
+
+    {% if current_torrent is defined %}
+    {% if let Some(current_torrent) = &current_torrent %}
+      <div class="alert alert-info mt-4">
+        You are currently moving the torrent {{ current_torrent.name }}
+        <a class="btn btn-success text-white" href="?id={{ current_torrent.id }}&validate=true">
+          <i class="fa fa-arrows-alt me-2"></i>
+          Validate moving here
+        </a>
+        <a class="btn btn-success text-white" href="?">
+          <i class="fa fa-close me-2"></i>
+          Cancel
+        </a>
+      </div>
+    {% endif %}
     {% endif %}
 
     <div class="row align-items-center">
@@ -54,6 +76,10 @@
         <ul class="list-group">
         {% for torrent in torrents %}
         <li>
+          <a class="btn btn-success text-white" href="?id={{ torrent.id }}">
+            <i class="fa fa-arrows-alt me-2"></i>
+            Move around
+          </a>
           <span>{{ torrent.name }} will create the following folders/files in this folder:</span>
           {# TODO: file tree in hightorrent #}
           <ul>
@@ -75,7 +101,7 @@
             <h4 class="mb-0">{% block folder_title %}{% endblock folder_title %}</h4>
             <div class="ms-4">
               {% if breadcrumbs is defined %}
-              <a class="btn btn-dark" href="/folders{% if let Some(parent) = breadcrumbs.iter().rev().collect::<Vec<_>>().get(1) %}/{{ parent.path }}{% endif %}">Go up</a>
+              <a class="btn btn-dark" href="/folders{% if let Some(parent) = breadcrumbs.iter().rev().collect::<Vec<_>>().get(1) %}/{{ parent.path }}{% endif %}{{ query_current_torrent() }}">Go up</a>
               {% endif %}
             </div>
           </div>
@@ -88,7 +114,7 @@
 
             {% for child in children %}
             <li class="list-group-item py-3">
-              <a class="d-block text-decoration-none" href="/folders/{{ child.folder_path }}">
+              <a class="d-block text-decoration-none" href="/folders/{{ child.folder_path }}{{ query_current_torrent() }}">
                 <div class="row">
                   {# TODO: col-9 was col-md-9 on content_folder/category. Is that relevant? #}
                   <div class="col-9">

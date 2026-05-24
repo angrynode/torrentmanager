@@ -263,4 +263,40 @@ impl TorrentOperator {
 
         Ok(model)
     }
+
+    pub async fn update_category_content_folder(
+        &self,
+        model: Model,
+        category: category::Model,
+        content_folder: Option<content_folder::Model>,
+    ) -> Result<Model, TorrentError> {
+        let mut active: ActiveModel = model.clone().into();
+        active.category_id = Set(category.id);
+        active.content_folder_id = Set(content_folder.as_ref().map(|x| x.id));
+        active.save(&self.state.database).await.context(DBSnafu)?;
+
+        let operation_log = OperationLog {
+            user: self.user.clone(),
+            date: Utc::now(),
+            table: Table::Torrent,
+            operation: OperationType::Update,
+            operation_id: OperationId {
+                object_id: model.id.to_owned(),
+                name: model.name.to_string(),
+            },
+            operation_form: Some(Operation::MoveTorrent {
+                torrent: model.id,
+                category: category.id,
+                content_folder: content_folder.map(|x| x.id),
+            }),
+        };
+
+        self.state
+            .logger
+            .write(operation_log)
+            .await
+            .context(LoggerSnafu)?;
+
+        Ok(model)
+    }
 }

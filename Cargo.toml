@@ -48,6 +48,7 @@ sea-orm-migration = { version = "2.0.0-rc.38" }
 serde = { version = "1.0.228", features = ["derive", "rc"] }
 # (De)serialization for operations log
 serde_json = { version = "1" }
+serde_with = "3.20.0"
 # Error declaration/context
 snafu = "0.9"
 # Serve static assets directly from the binary

@@ -154,6 +154,14 @@ impl StatusCookie {
         (self.cookies, Redirect::to(url))
     }
 
+    pub fn with_success(self, s: String) -> Self {
+        Self::success(self.cookies, s)
+    }
+
+    pub fn with_error(self, s: String) -> Self {
+        Self::error(self.cookies, s)
+    }
+
     pub fn with_template<T: FallibleTemplate>(self, mut template: T) -> (CookieJar, T) {
         let cookies = self.cookies.clone();
         template.with_optional_flash(self.message.map(|m| m.into()));
@@ -166,6 +174,15 @@ impl From<StatusMessage> for OperationStatus {
         Self {
             success: s.success,
             message: MessageOrError::Message(s.message),
+        }
+    }
+}
+
+impl From<OperationStatus> for StatusMessage {
+    fn from(s: OperationStatus) -> Self {
+        Self {
+            success: s.success,
+            message: s.message.messages().join("\n"),
         }
     }
 }
