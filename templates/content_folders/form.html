@@ -1,0 +1,20 @@
+<form method="POST" accept-charset="utf-8">
+  <div class="form-group">
+    <label for="name" class="form-label">Name</label>
+    <input 
+      type="text"
+      class="form-control"
+      name="name"
+      id="name"
+    />
+  </div> 
+
+  {% if folder.is_some() %}
+  <input type="hidden" id="parent_id" name="parent_id" value="{{ folder.as_ref().unwrap().id }}" />
+  {% endif %}
+
+  <div class="text-center mt-4">
+    <input type="Submit" class="btn btn-success" value="Create folder">
+  </div>
+</form>
+

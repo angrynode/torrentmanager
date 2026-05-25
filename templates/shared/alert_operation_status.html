@@ -1,9 +1,0 @@
-{% if let Some(flash) = flash %}
-  <div class="alert {% if flash.success %}alert-success{% else %}alert-danger{% endif %} mt-4">
-    {% for message in flash.message.messages() %}
-    <p class="mb-0">{{ message }}</p>
-    {% endfor %}
-  </div>
-{% endif %}
-
-

@@ -130,9 +130,9 @@ mod tests {
     use tokio::task::JoinSet;
 
     use super::*;
+    use crate::database::content_folder::ContentFolderOperation;
     use crate::database::operation::*;
     use crate::extractors::user::User;
-    use crate::routes::category::CategoryForm;
 
     #[tokio::test]
     async fn many_writers() {
@@ -145,16 +145,14 @@ mod tests {
         let operation_log = OperationLog {
             user: Some(User("foo".to_string())),
             date: Utc::now(),
-            table: Table::Category,
-            operation: OperationType::Create,
-            operation_id: OperationId {
+            table: Table::ContentFolder,
+            operation_type: OperationType::Create,
+            operation: ContentFolderOperation::Create {
+                id: 1,
                 name: "object".to_string(),
-                object_id: 1,
-            },
-            operation_form: Some(Operation::Category(CategoryForm {
-                name: "object".to_string(),
-                path: "/path".to_string(),
-            })),
+                parent: None,
+            }
+            .into(),
         };
 
         for _i in 0..100 {
@@ -185,16 +183,14 @@ mod tests {
         let operation_log = OperationLog {
             user: Some(User("foo".to_string())),
             date: Utc::now(),
-            table: Table::Category,
-            operation: OperationType::Create,
-            operation_id: OperationId {
+            table: Table::ContentFolder,
+            operation_type: OperationType::Create,
+            operation: ContentFolderOperation::Create {
+                id: 1,
                 name: "object".to_string(),
-                object_id: 1,
-            },
-            operation_form: Some(Operation::Category(CategoryForm {
-                name: "object".to_string(),
-                path: "/path".to_string(),
-            })),
+                parent: None,
+            }
+            .into(),
         };
 
         for i in 0..200 {

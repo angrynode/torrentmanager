@@ -15,7 +15,23 @@
     {% include "menus/header.html" %}
 
     <section class="section" style="padding-top: 100px;">
-      {% block errors %}{% endblock %}
+      {% block errors %}
+        {% if flash is defined %}
+        {% if let Some(flash) = flash %}
+        <div class="alert {% if flash.success %}alert-success{% else %}alert-danger{% endif %} mt-4">
+          {% for message in flash.message.messages() %}
+          <p class="mb-0">{{ message }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if state.free_space.free_space_percent < 5 %}
+        <div class="alert alert-warning  mt-4">
+          The disks are almost full : <span class="fw-bold">{{ state.free_space.free_space_gib }} GiB left</span> 
+        </div>
+        {% endif %}
+
+      {% endblock %}
       {% block main %}{% endblock %}
     </section>
 

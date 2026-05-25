@@ -1,6 +1,6 @@
 {{ log.date.format("%Y-%m-%d %H:%M:%S").to_string() }} {% if let Some(log_user) = log.user %}{{ log_user }}{% endif %}
 <span class="
-             {% match log.operation %}
+             {% match log.operation_type %}
              {% when OperationType::Create %}
                log-green
              {% when OperationType::Update %}
@@ -10,5 +10,5 @@
              {% else %}
              {% endmatch %}
 "> {{ log.operation }}
-</span> on table <span class="log-table fw-bold">{{ log.table }}</span>: <span class="log-object">{{ log.operation_id.name }} ({{ log.operation_id.object_id }})</span>
+</span> on table <span class="log-table fw-bold">{{ log.table }}</span>: <span class="log-object">{{ log.operation }}</span>
 
