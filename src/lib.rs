@@ -6,7 +6,6 @@ use static_serve::embed_assets;
 pub mod config;
 pub mod database;
 pub mod extractors;
-pub mod filesystem;
 pub mod middleware;
 pub mod migration;
 pub mod routes;
@@ -20,22 +19,18 @@ pub fn router(state: state::AppState) -> Router {
 
     Router::new()
         // Register dynamic routes
-        .route("/", get(routes::index::index))
-        .route("/progress/{view_request}", get(routes::progress::progress))
-        .route("/categories", post(routes::category::create))
-        .route("/categories/new", get(routes::category::new))
-        .route("/categories/{id}/delete", get(routes::category::delete))
-        .route("/folders/{category}", get(routes::category::show))
-        .route("/folders/{category}", post(routes::category::create_folder))
         .route(
-            "/folders/{category_name}/{*folder_path}",
-            get(routes::content_folder::show),
+            "/",
+            get(|| async { axum::response::Redirect::to("/folders") }),
         )
+        .route("/folders", get(routes::content_folder::index))
+        .route("/folders", post(routes::content_folder::create_folder))
+        .route("/progress/{view_request}", get(routes::progress::progress))
+        .route("/folders/{id}", get(routes::content_folder::show))
         .route(
-            "/folders/{category_name}/{*folder_path}",
+            "/folders/{id}",
             post(routes::content_folder::create_subfolder),
         )
-        .route("/folders", get(routes::index::index))
         .route("/logs", get(routes::logs::index))
         // Register static assets routes
         .nest("/assets", static_router())

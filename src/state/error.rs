@@ -5,7 +5,6 @@ use axum::response::{IntoResponse, Response};
 use snafu::ErrorCompat;
 use snafu::prelude::*;
 
-use crate::database::category::CategoryError;
 use crate::database::content_folder::ContentFolderError;
 use crate::migration::DbErr as MigrationError;
 use crate::state::free_space::FreeSpaceError;
@@ -28,8 +27,6 @@ pub enum AppStateError {
     Other {
         source: Box<dyn snafu::Error + Send + Sync + 'static>,
     },
-    #[snafu(display("Category error"))]
-    Category { source: CategoryError },
     #[snafu(display("Error during migration"))]
     Migration { source: MigrationError },
     #[snafu(display("Content folder error"))]

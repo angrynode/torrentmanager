@@ -8,19 +8,12 @@
       {% for log in logs %}
         <div class="log-line">
           <code class="text-white">
-            {% match log.operation_form %}
-              {% when Some(operation_form) %}
-                <details>
-                  <summary>
-                    {% include "logs/log_line.html" %}
-                  </summary>
-                  <p class="mt-2 mb-3">{{ operation_form }}</p>
-                </details>
-              {% when None %}
-                <p class="mb-0">
-                  {% include "logs/log_line.html" %}
-                </p>
-            {% endmatch %}
+            <details>
+              <summary>
+                {% include "logs/log_line.html" %}
+              </summary>
+              <p class="mt-2 mb-3">{{ log.operation }}</p>
+            </details>
           </code>
         </div>
       {% endfor %}

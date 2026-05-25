@@ -2,9 +2,8 @@ use chrono::{DateTime, Utc};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 
+use crate::database::content_folder;
 use crate::extractors::user::User;
-use crate::routes::category::CategoryForm;
-use crate::routes::content_folder::ContentFolderForm;
 
 /// Type of operation applied to the database.
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
@@ -14,15 +13,8 @@ pub enum OperationType {
     Delete,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OperationId {
-    pub object_id: i32,
-    pub name: String,
-}
-
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum Table {
-    Category,
     ContentFolder,
 }
 
@@ -32,8 +24,7 @@ pub enum Table {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Operation {
-    Category(CategoryForm),
-    ContentFolder(ContentFolderForm),
+    ContentFolder(content_folder::ContentFolderOperation),
 }
 
 impl std::fmt::Display for Operation {
@@ -46,9 +37,7 @@ impl std::fmt::Display for Operation {
 pub struct OperationLog {
     pub user: Option<User>,
     pub date: DateTime<Utc>,
+    pub operation: Operation,
+    pub operation_type: OperationType,
     pub table: Table,
-    pub operation: OperationType,
-    pub operation_id: OperationId,
-    // Raw operation parameters
-    pub operation_form: Option<Operation>,
 }

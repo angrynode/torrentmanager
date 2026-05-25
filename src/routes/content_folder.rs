@@ -1,14 +1,13 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use axum::Form;
+use axum::extract::Form;
+use axum::extract::Path;
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
-use crate::database::content_folder::PathBreadcrumb;
-use crate::database::{category, content_folder};
-use crate::extractors::folder_request::FolderRequest;
-use crate::filesystem::FileSystemEntry;
+use crate::database::content_folder;
 use crate::state::AppStateContext;
+use crate::state::error::AppStateError;
 use crate::state::flash_message::{
     FallibleTemplate, FlashRedirect, FlashTemplate, OperationStatus, StatusCookie,
 };
@@ -16,8 +15,6 @@ use crate::state::flash_message::{
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContentFolderForm {
     pub name: String,
-    pub parent_id: Option<i32>,
-    pub category_id: i32,
 }
 
 #[derive(Template, WebTemplate)]
@@ -25,33 +22,30 @@ pub struct ContentFolderForm {
 pub struct ContentFolderShowTemplate {
     /// Global application state
     pub state: AppStateContext,
-    /// current folder
-    pub folder: content_folder::Model,
+    /// Current folder, unless we're on the index page
+    pub folder: Option<content_folder::Model>,
     /// Folders with parent_id set to current folder
-    pub children: Vec<FileSystemEntry>,
-    /// Category
-    pub category: category::Model,
-    /// BreadCrumb extract from path
-    pub breadcrumbs: Vec<PathBreadcrumb>,
+    // TODO: order by alphanumeric
+    pub children: Vec<content_folder::Model>,
+    /// Ancestors leading to this page (breadcrumb)
+    pub ancestors: Vec<content_folder::Model>,
     /// Operation status for UI confirmation (Cookie)
     pub flash: Option<OperationStatus>,
 }
 
 impl ContentFolderShowTemplate {
-    fn new(context: AppStateContext, folder: FolderRequest) -> Self {
-        let FolderRequest {
-            breadcrumbs,
-            category,
+    fn new(context: AppStateContext, folder: content_folder::FolderView) -> Self {
+        let content_folder::FolderView {
+            ancestors,
             children,
             folder,
         } = folder;
 
         Self {
-            breadcrumbs,
-            category,
             children,
             flash: None,
             folder,
+            ancestors,
             state: context,
         }
     }
@@ -65,19 +59,34 @@ impl FallibleTemplate for ContentFolderShowTemplate {
 
 pub async fn show(
     context: AppStateContext,
-    folder: FolderRequest,
+    Path(id): Path<i32>,
     status: StatusCookie,
-) -> FlashTemplate<ContentFolderShowTemplate> {
-    status.with_template(ContentFolderShowTemplate::new(context, folder))
+) -> Result<FlashTemplate<ContentFolderShowTemplate>, AppStateError> {
+    // 404 if requested ID does not exist
+    let view = content_folder::FolderView::from_id(&context.db.content_folder(), id).await?;
+    Ok(status.with_template(ContentFolderShowTemplate::new(context, view)))
 }
 
-pub async fn create_subfolder(
+pub async fn index(
+    context: AppStateContext,
+    status: StatusCookie,
+) -> Result<FlashTemplate<ContentFolderShowTemplate>, AppStateError> {
+    let view = content_folder::FolderView::index(&context.db.content_folder()).await?;
+    Ok(status.with_template(ContentFolderShowTemplate::new(context, view)))
+}
+
+pub async fn create_folder(
     context: AppStateContext,
     jar: CookieJar,
-    folder: FolderRequest,
     Form(form): Form<ContentFolderForm>,
-) -> Result<FlashRedirect, ContentFolderShowTemplate> {
-    match context.db.content_folder().create(&form).await {
+) -> Result<Result<FlashRedirect, ContentFolderShowTemplate>, AppStateError> {
+    let view = content_folder::FolderView::index(&context.db.content_folder()).await?;
+    match context
+        .db
+        .content_folder()
+        .create(view.folder.clone(), form.name)
+        .await
+    {
         Ok(created) => {
             let status = StatusCookie::success(
                 jar,
@@ -87,12 +96,49 @@ pub async fn create_subfolder(
                 ),
             );
 
-            let uri = format!("/folders/{}{}", folder.category.name, created.path);
-            Ok(status.redirect(&uri))
+            let uri = format!("/folders/{}", created.id);
+            Ok(Ok(status.redirect(&uri)))
         }
         Err(error) => {
             let status = OperationStatus::error(error);
-            Err(status.with_template(ContentFolderShowTemplate::new(context, folder)))
+            Ok(Err(status.with_template(ContentFolderShowTemplate::new(
+                context, view,
+            ))))
+        }
+    }
+}
+
+// TODO: create top-level
+pub async fn create_subfolder(
+    context: AppStateContext,
+    jar: CookieJar,
+    Path(id): Path<i32>,
+    Form(form): Form<ContentFolderForm>,
+) -> Result<Result<FlashRedirect, ContentFolderShowTemplate>, AppStateError> {
+    let view = content_folder::FolderView::from_id(&context.db.content_folder(), id).await?;
+    match context
+        .db
+        .content_folder()
+        .create(view.folder.clone(), form.name)
+        .await
+    {
+        Ok(created) => {
+            let status = StatusCookie::success(
+                jar,
+                format!(
+                    "The folder {} has been successfully created (ID: {})",
+                    created.name, created.id
+                ),
+            );
+
+            let uri = format!("/folders/{}", created.id);
+            Ok(Ok(status.redirect(&uri)))
+        }
+        Err(error) => {
+            let status = OperationStatus::error(error);
+            Ok(Err(status.with_template(ContentFolderShowTemplate::new(
+                context, view,
+            ))))
         }
     }
 }
