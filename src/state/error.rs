@@ -6,6 +6,7 @@ use snafu::ErrorCompat;
 use snafu::prelude::*;
 
 use crate::database::content_folder::ContentFolderError;
+use crate::database::torrent::TorrentError;
 use crate::migration::DbErr as MigrationError;
 use crate::state::free_space::FreeSpaceError;
 use crate::state::logger::LoggerError;
@@ -31,6 +32,8 @@ pub enum AppStateError {
     Migration { source: MigrationError },
     #[snafu(display("Content folder error"))]
     ContentFolder { source: ContentFolderError },
+    #[snafu(display("Torrent error"))]
+    Torrent { source: TorrentError },
     #[snafu(display("IO error"))]
     IO { source: std::io::Error },
     #[snafu(display("{reason}"))]

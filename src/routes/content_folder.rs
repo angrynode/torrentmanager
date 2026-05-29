@@ -34,7 +34,7 @@ pub struct ContentFolderShowTemplate {
 }
 
 impl ContentFolderShowTemplate {
-    fn new(context: AppStateContext, folder: content_folder::FolderView) -> Self {
+    pub fn new(context: AppStateContext, folder: content_folder::FolderView) -> Self {
         let content_folder::FolderView {
             ancestors,
             children,

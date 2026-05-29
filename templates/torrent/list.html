@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block main %}
+  <div class="container">
+    <h1>List of uploaded torrents</h1>
+
+    <div class="card my-3">
+      <div class="card-body">
+        <div class="table-responsive-lg">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            {% for torrent in torrents %}
+            <tr>
+              <td>
+                {% if torrent.torrent_file.is_none() %}
+                <i class="fa fa-spinner fa-spin me-2"></i>
+                {% else %}
+                <i class="fa fa-check me-2"></i>
+                {% endif %}
+              </td>
+              <td class="is-left" align="left">{{ torrent.name }}</td>
+              <td><a href="/folders/{{ torrent.content_folder_id }}" class="btn btn-success">Aller dans le dossier</a></td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock main %}
