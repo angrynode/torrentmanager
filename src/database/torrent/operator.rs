@@ -52,6 +52,22 @@ impl TorrentOperator<'_> {
             .context(DBSnafu)
     }
 
+    /// List torrents for a given content folder
+    ///
+    /// Should not fail, unless SQLite was corrupted for some reason.
+    pub async fn list_for_folder(
+        &self,
+        folder: &content_folder::Model,
+    ) -> Result<Vec<Model>, TorrentError> {
+        // TODO: optimization
+        Ok(self
+            .list()
+            .await?
+            .into_iter()
+            .filter(|x| x.content_folder_id == folder.id)
+            .collect())
+    }
+
     /// Count torrents
     ///
     /// Should not fail, unless SQLite was corrupted for some reason.

@@ -1,3 +1,5 @@
+use crate::database::torrent;
+
 use super::*;
 
 /// A loaded folder, with all surrounding entities loaded as well:
@@ -11,6 +13,7 @@ pub struct FolderView {
     pub ancestors: Vec<Model>,
     pub children: Vec<Model>,
     pub folder: Option<Model>,
+    pub torrents: Vec<torrent::Model>,
 }
 
 impl FolderView {
@@ -27,6 +30,7 @@ impl FolderView {
             ancestors: vec![],
             folder: None,
             children,
+            torrents: vec![],
         })
     }
 
@@ -43,6 +47,8 @@ impl FolderView {
         let list = operator.list().await?;
 
         if let Some(folder) = list.iter().find(|x| x.id == id) {
+            let torrents = operator.torrent().list_for_folder(folder).await.unwrap();
+
             Ok(Self {
                 ancestors: folder
                     .ancestors_from_list(&list)
@@ -55,6 +61,7 @@ impl FolderView {
                     .cloned()
                     .collect(),
                 folder: Some(folder.clone()),
+                torrents,
             })
         } else {
             Err(ContentFolderError::NotFound { id })
