@@ -13,10 +13,7 @@ impl DatabaseOperator {
         Self { state, user }
     }
 
-    pub fn content_folder(&self) -> ContentFolderOperator {
-        ContentFolderOperator {
-            state: self.state.clone(),
-            user: self.user.clone(),
-        }
+    pub fn content_folder<'a>(&'a self) -> ContentFolderOperator<'a> {
+        ContentFolderOperator { db: self }
     }
 }

@@ -2,6 +2,7 @@ use chrono::Utc;
 use sea_orm::*;
 use snafu::prelude::*;
 
+use std::ops::Deref;
 use std::str::FromStr;
 
 use crate::database::operation::OperationLog;
@@ -9,29 +10,23 @@ use crate::database::operation::OperationType;
 use crate::database::operation::Table;
 use crate::database::operator::DatabaseOperator;
 use crate::extractors::normalized_path::NormalizedPathComponent;
-use crate::extractors::user::User;
-use crate::state::AppState;
 
 use super::*;
 
 #[derive(Clone, Debug)]
-pub struct ContentFolderOperator {
-    pub state: AppState,
-    pub user: Option<User>,
+pub struct ContentFolderOperator<'a> {
+    pub db: &'a DatabaseOperator,
 }
 
-impl ContentFolderOperator {
-    pub fn new(state: AppState, user: Option<User>) -> Self {
-        Self { state, user }
-    }
+impl Deref for ContentFolderOperator<'_> {
+    type Target = DatabaseOperator;
 
-    pub fn db(&self) -> DatabaseOperator {
-        DatabaseOperator {
-            state: self.state.clone(),
-            user: self.user.clone(),
-        }
+    fn deref(&self) -> &DatabaseOperator {
+        self.db
     }
+}
 
+impl ContentFolderOperator<'_> {
     /// List content folders
     ///
     /// Should not fail, unless SQLite was corrupted for some reason.
