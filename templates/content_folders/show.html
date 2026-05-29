@@ -45,6 +45,35 @@
             </div>
           </div>
 
+          {% if torrents.len() > 0 %}
+          <div class="card mt-4">
+            <div class="card-body">
+              <div class="p-4">
+                <div class="d-flex align-items-center mb-4">
+                  <h4 class="mb-0">{{ torrents.len() }} torrents waiting for confirmation in this folder</h4>
+                </div>
+              </div>
+              <ul class="list-group">
+              {% for torrent in torrents %}
+              {% if let Some(torrent_file) = torrent.torrent_file %}
+              <li>
+                <span>{{ torrent.name }} will create the following folders/files in this folder:</span>
+                {# TODO: file tree in hightorrent #}
+                <ul>
+                {% for file in torrent_file.decoded.files().unwrap() %}
+                  <li>({{ file.size | filesizeformat }}) {{ file.path.to_str().unwrap() }}</li>
+                {% endfor %}
+                </ul>
+              </li>
+              {% else %}
+              <li><span>{{ torrent.name }} is still resolving so we can't know the files yet</span></li>
+              {% endif %}
+              {% endfor %}
+              </ul>
+            </div>
+          </div>
+          {% endif %}
+
           <ul class="list-group">
             {% block system_list %}
             {% if children.is_empty() %}

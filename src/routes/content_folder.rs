@@ -5,7 +5,7 @@ use axum::extract::Path;
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
-use crate::database::content_folder;
+use crate::database::{content_folder, torrent};
 use crate::state::AppStateContext;
 use crate::state::error::AppStateError;
 use crate::state::flash_message::{
@@ -24,6 +24,8 @@ pub struct ContentFolderShowTemplate {
     pub state: AppStateContext,
     /// Current folder, unless we're on the index page
     pub folder: Option<content_folder::Model>,
+    /// Torrents associated with the content folder (empty on index page)
+    pub torrents: Vec<torrent::Model>,
     /// Folders with parent_id set to current folder
     // TODO: order by alphanumeric
     pub children: Vec<content_folder::Model>,
@@ -39,12 +41,14 @@ impl ContentFolderShowTemplate {
             ancestors,
             children,
             folder,
+            torrents,
         } = folder;
 
         Self {
             children,
             flash: None,
             folder,
+            torrents,
             ancestors,
             state: context,
         }
