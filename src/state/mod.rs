@@ -2,10 +2,12 @@ use hightorrent_api::hightorrent::{SingleTarget, TorrentContent, TorrentList};
 use hightorrent_api::{Api, QBittorrentClient};
 use sea_orm::*;
 use snafu::prelude::*;
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::config::AppConfig;
 use crate::extractors::user::User;
 use crate::migration::{Migrator, MigratorTrait};
+use crate::resolver::ResolverAction;
 
 mod context;
 pub use context::AppStateContext;
@@ -35,10 +37,16 @@ pub struct AppState {
 
     // TODO: multiple torrent backends
     pub torrent_client: QBittorrentClient,
+
+    /// MagnetLink resolver.
+    pub resolver: UnboundedSender<ResolverAction>,
 }
 
 impl AppState {
-    pub async fn new(config: AppConfig) -> Result<Self, AppStateError> {
+    pub async fn new(
+        config: AppConfig,
+        resolver: UnboundedSender<ResolverAction>,
+    ) -> Result<Self, AppStateError> {
         // TODO: config for torrent backend
 
         let torrent_client = QBittorrentClient::new_not_logged_in(
@@ -66,6 +74,7 @@ impl AppState {
             database,
             logger,
             torrent_client,
+            resolver,
         })
     }
 

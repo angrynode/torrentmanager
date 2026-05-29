@@ -41,6 +41,8 @@ env_logger = "0.11.10"
 # hightorrent_api = { git = "https://github.com/angrynode/hightorrent_api", branch = "feat-sea-orm", features = [ "sea_orm" ] }
 hightorrent_api = { version = "0.2.2", features = [ "sea_orm" ] }
 log = "0.4.29"
+# rqbit torrent client to resolve magnets
+librqbit = { git = "https://github.com/ikatson/rqbit" }
 # SQLite ORM
 sea-orm = { version = "2.0.0-rc.38", features = [ "runtime-tokio", "debug-print", "sqlx-sqlite"] }
 # SQLite migrations

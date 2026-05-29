@@ -7,6 +7,7 @@ use std::ops::Deref;
 use crate::database::content_folder;
 use crate::database::operation::Table;
 use crate::database::operator::{DatabaseOperator, TableOperator};
+use crate::resolver::ResolverAction;
 
 use super::*;
 
@@ -125,6 +126,13 @@ impl TorrentOperator<'_> {
         .await
         .context(LoggerSnafu)?;
 
+        // Now that the magnet has been summoned into the DB,
+        // we should let the resolver know about it.
+        self.state
+            .resolver
+            .send(ResolverAction::Resolve(magnet))
+            .expect("resolver sender channel has been closed");
+
         Ok(model)
     }
 
@@ -202,7 +210,6 @@ impl TorrentOperator<'_> {
             .await
             .unwrap();
 
-        // TODO: cancel magnet resolution
         let mut active_model: ActiveModel = torrent.clone().into();
         active_model.torrent_file = Set(Some(file));
         active_model.status = Set(TorrentStatus::Downloading);
@@ -224,6 +231,12 @@ impl TorrentOperator<'_> {
             .update(&self.state.database)
             .await
             .context(DBSnafu)?;
+
+        // Cancel any pending resolution operation
+        self.state
+            .resolver
+            .send(ResolverAction::Cancel(torrent.torrent_id.clone()))
+            .expect("resolver sender channel has been closed");
 
         self.log_update(TorrentOperation::ResolveMagnet {
             id: torrent.id,
