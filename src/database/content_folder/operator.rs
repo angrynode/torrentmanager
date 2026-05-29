@@ -1,14 +1,11 @@
-use chrono::Utc;
 use sea_orm::*;
 use snafu::prelude::*;
 
 use std::ops::Deref;
 use std::str::FromStr;
 
-use crate::database::operation::OperationLog;
-use crate::database::operation::OperationType;
 use crate::database::operation::Table;
-use crate::database::operator::DatabaseOperator;
+use crate::database::operator::{DatabaseOperator, TableOperator};
 use crate::extractors::normalized_path::NormalizedPathComponent;
 
 use super::*;
@@ -23,6 +20,12 @@ impl Deref for ContentFolderOperator<'_> {
 
     fn deref(&self) -> &DatabaseOperator {
         self.db
+    }
+}
+
+impl TableOperator for ContentFolderOperator<'_> {
+    fn table(&self) -> Table {
+        Table::ContentFolder
     }
 }
 
@@ -101,24 +104,13 @@ impl ContentFolderOperator<'_> {
                 .context(IOSnafu)?;
         }
 
-        let operation_log = OperationLog {
-            user: self.user.clone(),
-            date: Utc::now(),
-            operation: ContentFolderOperation::Create {
-                id: model.id,
-                name: model.name.to_string(),
-                parent: parent.as_ref().map(|x| (x.id, x.name.to_string())),
-            }
-            .into(),
-            operation_type: OperationType::Create,
-            table: Table::ContentFolder,
-        };
-
-        self.state
-            .logger
-            .write(operation_log)
-            .await
-            .context(LoggerSnafu)?;
+        self.log_create(ContentFolderOperation::Create {
+            id: model.id,
+            name: model.name.to_string(),
+            parent: parent.as_ref().map(|x| (x.id, x.name.to_string())),
+        })
+        .await
+        .context(LoggerSnafu)?;
 
         Ok(model)
     }
