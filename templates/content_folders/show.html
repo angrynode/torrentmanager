@@ -1,8 +1,26 @@
 {% extends "base.html" %}
 
+{%- macro query_moving_torrent() -%}
+{%- if let Some(moving_torrent) = moving_torrent -%}?moving_id={{ moving_torrent.id }}{%- endif -%}
+{%- endmacro query_moving_torrent -%}
+
 {% block main %}
   <div class="container">
     <h1>File System</h1>
+
+    {% if let Some(moving_torrent) = moving_torrent %}
+      <div class="alert alert-info mt-4">
+        You are currently moving the torrent {{ moving_torrent.name }}
+        <a class="btn btn-success text-white" href="?moving_id={{ moving_torrent.id }}&moving_validate=true">
+          <i class="fa fa-arrows-alt me-2"></i>
+          Validate moving here
+        </a>
+        <a class="btn btn-success text-white" href="?">
+          <i class="fa fa-close me-2"></i>
+          Cancel
+        </a>
+      </div>
+    {% endif %}
 
     <div class="row align-items-center">
       <div class="col-md-10">
@@ -17,7 +35,7 @@
               </li>
 
               {% for ancestor in ancestors %}
-              <li class="breadcrumb-item"><a href="/folders/{{ ancestor.id }}">{{ ancestor.name }}</a></li>
+              <li class="breadcrumb-item"><a href="/folders/{{ ancestor.id }}{{ query_moving_torrent() }}">{{ ancestor.name }}</a></li>
               {% endfor %}
               {% if let Some(folder) = folder %}
               <li class="breadcrumb-item"><strong>{{ folder.name }}</strong></li>
@@ -57,6 +75,10 @@
               {% for torrent in torrents %}
               {% if let Some(torrent_file) = torrent.torrent_file %}
               <li>
+                <a class="btn btn-success text-white" href="?moving_id={{ torrent.id }}">
+                  <i class="fa fa-arrows-alt me-2"></i>
+                  Move around
+                </a>
                 <span>{{ torrent.name }} will create the following folders/files in this folder:</span>
                 {# TODO: file tree in hightorrent #}
                 <ul>
@@ -82,7 +104,7 @@
 
             {% for child in children %}
             <li class="list-group-item py-3">
-              <a class="d-block text-decoration-none" href="/folders/{{ child.id }}">
+              <a class="d-block text-decoration-none" href="/folders/{{ child.id }}{{ query_moving_torrent() }}">
                 <div class="row">
                   <div class="col-9">
                     <div class="d-flex align-items-center">

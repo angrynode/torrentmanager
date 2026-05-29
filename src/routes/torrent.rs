@@ -37,7 +37,7 @@ pub async fn upload_torrent(
     jar: CookieJar,
     TypedMultipart(form): TypedMultipart<TorrentForm>,
 ) -> Result<Response, AppStateError> {
-    let view = FolderView::from_id(&context.db.content_folder(), id).await?;
+    let view = FolderView::from_id(&context.db.content_folder(), id, None).await?;
 
     if let Err(e) = context
         .db
@@ -64,7 +64,7 @@ pub async fn upload_magnet(
     jar: CookieJar,
     Form(form): Form<MagnetForm>,
 ) -> Result<Response, AppStateError> {
-    let view = FolderView::from_id(&context.db.content_folder(), id).await?;
+    let view = FolderView::from_id(&context.db.content_folder(), id, None).await?;
 
     if let Err(e) = context
         .db
