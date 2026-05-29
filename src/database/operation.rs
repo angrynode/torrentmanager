@@ -3,6 +3,7 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize};
 
 use crate::database::content_folder;
+use crate::database::torrent;
 use crate::extractors::user::User;
 
 /// Type of operation applied to the database.
@@ -16,6 +17,7 @@ pub enum OperationType {
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum Table {
     ContentFolder,
+    Torrent,
 }
 
 /// Operation applied to the database.
@@ -25,6 +27,7 @@ pub enum Table {
 #[serde(untagged)]
 pub enum Operation {
     ContentFolder(content_folder::ContentFolderOperation),
+    Torrent(torrent::TorrentOperation),
 }
 
 impl std::fmt::Display for Operation {

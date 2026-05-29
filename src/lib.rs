@@ -31,6 +31,15 @@ pub fn router(state: state::AppState) -> Router {
             "/folders/{id}",
             post(routes::content_folder::create_subfolder),
         )
+        .route(
+            "/folders/{id}/upload_torrent",
+            post(routes::torrent::upload_torrent),
+        )
+        .route(
+            "/folders/{id}/upload_magnet",
+            post(routes::torrent::upload_magnet),
+        )
+        .route("/torrent", get(routes::torrent::list))
         .route("/logs", get(routes::logs::index))
         // Register static assets routes
         .nest("/assets", static_router())

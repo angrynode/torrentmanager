@@ -1,6 +1,7 @@
 use camino::{Utf8Path, Utf8PathBuf};
 use sea_orm::entity::prelude::*;
 
+use crate::database::torrent;
 use crate::extractors::normalized_path::NormalizedPathComponent;
 
 /// A content folder to store associated files.
@@ -18,6 +19,8 @@ pub struct Model {
     pub parent_id: Option<i32>,
     #[sea_orm(self_ref, relation_enum = "Parent", from = "parent_id", to = "id")]
     pub parent: HasOne<Entity>,
+    #[sea_orm(has_many)]
+    pub torrents: HasMany<torrent::Entity>,
 }
 
 #[async_trait::async_trait]

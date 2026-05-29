@@ -4,6 +4,7 @@ use std::ops::Deref;
 
 use crate::database::content_folder::ContentFolderOperator;
 use crate::database::operation::{Operation, OperationLog, OperationType, Table};
+use crate::database::torrent::TorrentOperator;
 use crate::extractors::user::User;
 use crate::state::AppState;
 use crate::state::logger::LoggerError;
@@ -63,5 +64,9 @@ impl DatabaseOperator {
 
     pub fn content_folder<'a>(&'a self) -> ContentFolderOperator<'a> {
         ContentFolderOperator { db: self }
+    }
+
+    pub fn torrent<'a>(&'a self) -> TorrentOperator<'a> {
+        TorrentOperator { db: self }
     }
 }
