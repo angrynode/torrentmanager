@@ -15,7 +15,7 @@ pub struct FolderView {
 
 impl FolderView {
     /// Loads the top-most folder view, which is not a folder and may not have parents.
-    pub async fn index(operator: &ContentFolderOperator) -> Result<Self, ContentFolderError> {
+    pub async fn index(operator: &ContentFolderOperator<'_>) -> Result<Self, ContentFolderError> {
         let children = operator
             .list()
             .await?
@@ -37,7 +37,7 @@ impl FolderView {
     /// - the requested ID does not exist
     // TODO: optimize with custom query
     pub async fn from_id(
-        operator: &ContentFolderOperator,
+        operator: &ContentFolderOperator<'_>,
         id: i32,
     ) -> Result<Self, ContentFolderError> {
         let list = operator.list().await?;
