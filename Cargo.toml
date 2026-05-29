@@ -74,6 +74,7 @@ toml = { version = "1", features = ["preserve_order"] }
 uucore = { version = "0.8.0", features = ["fsext"] }
 # Finding XDG standard directories (such as ~/.config/torrentmanager/config.toml)
 xdg = "3.0.0"
+serde_with = "3.20.0"
 
 [dev-dependencies]
 async-tempfile = "0.7"

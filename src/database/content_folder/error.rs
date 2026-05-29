@@ -22,6 +22,11 @@ pub enum ContentFolderError {
     Logger { source: LoggerError },
     #[snafu(display("Failed to create the folder on disk"))]
     IO { source: std::io::Error },
+    #[snafu(display("Failed to load the torrent {id} requested to be moved"))]
+    MovingTorrent {
+        id: i32,
+        source: crate::database::torrent::TorrentError,
+    },
 }
 
 impl From<ContentFolderError> for AppStateError {

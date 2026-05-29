@@ -150,6 +150,14 @@ impl StatusCookie {
         status
     }
 
+    pub fn with_success(self, s: String) -> Self {
+        Self::success(self.cookies, s)
+    }
+
+    pub fn with_error(self, s: String) -> Self {
+        Self::error(self.cookies, s)
+    }
+
     pub fn redirect(self, url: &str) -> FlashRedirect {
         (self.cookies, Redirect::to(url))
     }

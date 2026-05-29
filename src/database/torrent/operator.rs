@@ -203,6 +203,40 @@ impl TorrentOperator<'_> {
         Ok(model)
     }
 
+    /// Moves a torrent to a given content folder
+    ///
+    /// TODO: This should error if there are conflicting files over there,
+    /// by checking torrent content.
+    pub async fn move_folder(
+        &self,
+        torrent: Model,
+        folder: &content_folder::Model,
+    ) -> Result<Model, TorrentError> {
+        let previous_folder = self
+            .content_folder()
+            .find_by_id(torrent.content_folder_id)
+            .await
+            .unwrap();
+
+        let mut active_model: ActiveModel = torrent.into();
+        active_model.content_folder_id = Set(folder.id);
+        let torrent = active_model
+            .update(&self.state.database)
+            .await
+            .context(DBSnafu)?;
+
+        self.log_update(TorrentOperation::MoveTorrent {
+            id: torrent.id,
+            name: torrent.name.to_string(),
+            previous_folder: (previous_folder.id, previous_folder.name.to_string()),
+            new_folder: (folder.id, folder.name.to_string()),
+        })
+        .await
+        .context(LoggerSnafu)?;
+
+        Ok(torrent)
+    }
+
     /// Internal method used by `import_torrent`.
     ///
     /// Resolves a magnet to a torrent, or if it's already resolved, errors because of duplicate.
