@@ -11,7 +11,7 @@ TorrentManager is not feature-complete yet. This branch is the third iteration o
 
 - first prototype: PHP interface + bash/python processing scripts, only used for uploading torrents to qBittorrent (no follow-up)
 - second iteration: Rust/rocket + bash/python processing scripts, allows viewing torrents from qBittorrent and filtering stuck torrents
-- third iteration (this branch): Rust/axum
+- third iteration (this branch): Rust/axum + qBittorrent backend
 
 In the future, TorrentManager will become federated and allow you to find content from your friends to help and distribute it. For example, subscribing to a hypothetical [media.ccc.de](https://media.ccc.de/) instance would help seeding their video files and automatically importing them into your local media library.
 
@@ -19,7 +19,7 @@ In the future, TorrentManager will become federated and allow you to find conten
   - [x] qBittorrent v5.0.x/v5.1.x
   - [ ] Transmission
   - [ ] rqbit
-- [ ] Torrent categories (video, iso, etc...) for placement in different folders
+- [x] Torrent categories (video, iso, etc...) for placement in different folders
 - [ ] Torrent meta files (eg. associated subtitles)
 - [ ] Federation
   - [ ] Following new imports on other instances (RSS/ActivityPub)
@@ -95,7 +95,7 @@ In the future, all route handlers will have a signature indicating whether they 
 
 # TODO
 
-- Keep local database of known torrents
+- [x] Keep local database of known torrents
 - Import unmanaged torrents (unknown to the local database)
 - Upload new torrents to the client
 - Keep track of associated files:
